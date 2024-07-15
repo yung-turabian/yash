@@ -9,9 +9,9 @@ Nihilism and a desire to not reinvent the wheel but truly understand the nasty u
 
 ## So Far...
 
-❌ - exit
-😺 - cat
-🤔 - whoami
+- ❌ - exit
+- 😺 - cat
+- 🤔 - whoami
 🔍,🔎 - whereis
 🗣️ - echo
 🤬 - echo
