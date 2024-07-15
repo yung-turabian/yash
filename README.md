@@ -9,30 +9,35 @@ Nihilism and a desire to not reinvent the wheel but truly understand the nasty u
 
 ## So Far...
 
+### Commands
+
 - ❌ - exit
 - 😺 - cat
 - 🤔 - whoami
-🔍,🔎 - whereis
-🗣️ - echo
-🤬 - echo
-😱 - echo (but spooky)
-👀 - ls
-  🔬 - a
-  👓 - l
-  👶 - h
-🔨,⚒️,🛠️,🏗️ - pwd
-🏃,📦 - cd
-🗑️ - rm
-📔, 📓 - vim
-🤢 - emacs
+- 🔍,🔎 - whereis
+- 🗣️ - echo
+- 🤬 - echo
+- 😱 - echo (but spooky)
+- 👀 - ls
+  - 🔬 - a
+  - 👓 - l
+  - 👶 - h
+- 🔨,⚒️,🛠️,🏗️ - pwd
+- 🏃,📦 - cd
+- 🗑️ - rm
+  - ➰ - -r
+  - 💪 - -f
+- 📔, 📓 - vim
+- 🤢 - emacs
 
-👉 - redirection
-🪈 - pipe
+### Tools
 
-➰ - -r
-🆘 - --help
-💪 - -f
+- 👉 - redirection
+- 🪈 - pipe
 
+### Options
+
+- 🆘 - --help
 
 ## Here's a shell :0
 
