@@ -215,6 +215,8 @@ reset_terminal()
 		tcsetattr(shell_terminal, TCSANOW, &shell_tmodes);
 }
 
+#include <sys/ioctl.h>
+
 void
 init_shell()
 {
@@ -225,8 +227,12 @@ init_shell()
 		shell_is_interactive = isatty(shell_terminal);
 		device_name = ttyname(shell_terminal);
 
+		struct winsize w;
+		ioctl(0, TIOCGWINSZ, &w);
+
 		fprintf(stdout, "[yash🐚] Shell is interactive: %d \n"
-										"	 Device name: %s \n", shell_is_interactive, device_name);
+										"	 Device name: %s \n"
+										"  Lines %d\n", shell_is_interactive, device_name, w.ws_row);
 
 		if(shell_is_interactive) {
 				
@@ -236,11 +242,11 @@ init_shell()
 				
 				/* Ignore interactive and job-control signals.  */
 				//signal (SIGINT, SIG_IGN); // ^C
-				signal (SIGQUIT, SIG_IGN);
-				signal (SIGTSTP, SIG_IGN); // ^Z
-				signal (SIGTTIN, SIG_IGN);
-				signal (SIGTTOU, SIG_IGN);
-				signal (SIGCHLD, SIG_IGN);
+				//signal (SIGQUIT, SIG_IGN);
+				//signal (SIGTSTP, SIG_IGN); // ^Z
+				//signal (SIGTTIN, SIG_IGN);
+				//signal (SIGTTOU, SIG_IGN);
+				//signal (SIGCHLD, SIG_IGN);
 				// VERASE ^H or ^?
 				// VSTOP AND VSTART, ^S and ^Q
 
@@ -256,11 +262,15 @@ init_shell()
 				// save default term attribs for shell
 				tcgetattr(shell_terminal, &shell_tmodes);
 
-				struct termios new_t = shell_tmodes;
+				struct termios new_t;
+				memcpy(&new_t, &shell_tmodes, sizeof(new_t));
 
 
 				//new_t.c_lflag &= ~(ISIG);
-				//new_t.c_lflag &= ~(ICANON);
+				new_t.c_lflag &= ~(ICANON | ECHO);
+				new_t.c_cc[VTIME] = 0;
+				new_t.c_cc[VMIN] = 1;
+				new_t.c_cc[VERASE] = 0;
 				//new_t.c_iflag &= (IUTF8);
 				//new_t.c_cflag;
 				//new_t.c_oflag &= (IUTF8);
@@ -292,12 +302,223 @@ read_key(char* buf, int k)
 		return -1; //something went wrong
 }
 
+#include <X11/Xlib.h> // for linx clipboard
+
+
+#include <term.h>
+
+void
+show_utf8_prop(Display* dpy, Window w, Atom p)
+{
+		Atom da, incr, type;
+		int di;
+		unsigned long size, dul;
+		unsigned char *prop_ret = NULL;
+		
+		// Dummy call to get type and size
+		XGetWindowProperty(dpy, w, p, 0, 0, False, AnyPropertyType,
+										   &type, &di, &dul, &size, &prop_ret);
+		
+		XFree(prop_ret);
+
+		incr = XInternAtom(dpy, "INCR", False);
+		if (type == incr)
+    {
+        printf("Data too large and INCR mechanism not implemented\n");
+        return;
+    }
+		
+		printf("Property size: %lu\n", size);
+
+		XGetWindowProperty(dpy, w, p, 0, size, False, AnyPropertyType,
+                       &da, &di, &dul, &dul, &prop_ret);
+    printf("%s", prop_ret);
+    fflush(stdout);
+    XFree(prop_ret);
+
+    /* Signal the selection owner that we have successfully read the
+     * data. */
+    XDeleteProperty(dpy, w, p);
+}
+
+unsigned char*
+get_utf8_prop(Display* dpy, Window w, Atom p)
+{
+		Atom da, incr, type;
+		int di;
+		unsigned long size, dul;
+		unsigned char *prop_ret = NULL;
+		
+		// Dummy call to get type and size
+		XGetWindowProperty(dpy, w, p, 0, 0, False, AnyPropertyType,
+										   &type, &di, &dul, &size, &prop_ret);
+		
+		XFree(prop_ret);
+
+		incr = XInternAtom(dpy, "INCR", False);
+		if (type == incr)
+    {
+        printf("Data too large and INCR mechanism not implemented\n");
+        return NULL;
+    }
+
+		XGetWindowProperty(dpy, w, p, 0, size, False, AnyPropertyType,
+                       &da, &di, &dul, &dul, &prop_ret);
+
+    /* Signal the selection owner that we have successfully read the
+     * data. */
+    XDeleteProperty(dpy, w, p);
+
+    return prop_ret;
+
+}
+
+int
+get()
+{
+		Display *dpy;
+		Window owner, target_window, root;
+		int screen;
+		Atom sel, target_property, utf8;
+		XEvent ev;
+		XSelectionEvent *sev;
+
+		dpy = XOpenDisplay(NULL);
+		if(!dpy) {
+				fprintf(stderr, "Could not open X display\n");
+				return EXIT_FAILURE;
+		}
+
+		screen = DefaultScreen(dpy);
+		root = RootWindow(dpy, screen);
+
+		sel = XInternAtom(dpy, "CLIPBOARD", False);
+		utf8 = XInternAtom(dpy, "UTF8_STRING", False);
+
+		owner = XGetSelectionOwner(dpy, sel);
+		if (owner == None)
+    {
+        printf("'CLIPBOARD' has no owner\n");
+        return 1;
+    }
+    printf("0x%lX\n", owner);
+
+		/* The selection owner will store the data in a property on this
+     * window: */
+    target_window = XCreateSimpleWindow(dpy, root, -10, -10, 1, 1, 0, 0, 0);
+
+    /* That's the property used by the owner. Note that it's completely
+     * arbitrary. */
+    target_property = XInternAtom(dpy, "PENGUIN", False);
+
+    /* Request conversion to UTF-8. Not all owners will be able to
+     * fulfill that request. */
+    XConvertSelection(dpy, sel, utf8, target_property, target_window,
+                      CurrentTime);
+
+		for (;;)
+    {
+        XNextEvent(dpy, &ev);
+        switch (ev.type)
+        {
+            case SelectionNotify:
+                sev = (XSelectionEvent*)&ev.xselection;
+                if (sev->property == None)
+                {
+                    printf("Conversion could not be performed.\n");
+                    return 1;
+                }
+                else
+                {
+                    show_utf8_prop(dpy, target_window, target_property);
+                    return 0;
+                }
+                break;
+        }
+    }
+}
+
+unsigned char*
+getX11Clipboard()
+{
+		Display *dpy;
+		Window owner, target_window, root;
+		int screen;
+		Atom sel, target_property, utf8;
+		XEvent ev;
+		XSelectionEvent *sev;
+
+		dpy = XOpenDisplay(NULL);
+		if(!dpy) {
+				fprintf(stderr, "Could not open X display\n");
+				return NULL;
+		}
+
+		screen = DefaultScreen(dpy);
+		root = RootWindow(dpy, screen);
+
+		sel = XInternAtom(dpy, "CLIPBOARD", False);
+		utf8 = XInternAtom(dpy, "UTF8_STRING", False);
+
+		owner = XGetSelectionOwner(dpy, sel);
+		if (owner == None)
+    {
+        printf("'CLIPBOARD' has no owner\n");
+        return NULL;
+    }
+
+		/* The selection owner will store the data in a property on this
+     * window: */
+    target_window = XCreateSimpleWindow(dpy, root, -10, -10, 1, 1, 0, 0, 0);
+
+    /* That's the property used by the owner. Note that it's completely
+     * arbitrary. */
+    target_property = XInternAtom(dpy, "PENGUIN", False);
+
+    /* Request conversion to UTF-8. Not all owners will be able to
+     * fulfill that request. */
+    XConvertSelection(dpy, sel, utf8, target_property, target_window,
+                      CurrentTime);
+
+		for (;;)
+    {
+        XNextEvent(dpy, &ev);
+        switch (ev.type)
+        {
+            case SelectionNotify:
+                sev = (XSelectionEvent*)&ev.xselection;
+                if (sev->property == None)
+                {
+                    printf("Conversion could not be performed.\n");
+                    return NULL;
+                }
+                else
+                {
+										return get_utf8_prop(dpy, target_window, target_property);
+                }
+                break;
+        }
+    }
+}
+
+int
+getc()
+{
+		int c;
+		c = 0;
+
+		read(0, &c, 4);
+		return c;
+}
+
+
 int 
 main(int argc, char* argv[])
 {
-
+		
+		//get();
 		init_shell();
-	
+
 		BufferedLine* currentLine;
 		DIR *current_dir;
 		//struct dirent *dp;
@@ -312,20 +533,55 @@ main(int argc, char* argv[])
 		char* path = (char*)"/usr/bin/";
 		char full_cmd[50] = "";
 		char* shell_argv[2];
+		unsigned char* emoji;
 
 		buf = (char*)malloc(sizeof(char) * 4096);
+		
 
+		// FIX THIS PLEAS!!!
 		for(;;)
 		{
 				fprintf(stdout, "🐚 ");
-				sgets(buf, 4096);
+				fflush(stdout);
+				
+				// pretty shit, rework
+				char c;
+				do {
+						c = getc();
+						if(c == 10) { // LF
+								break;
+						}
 
+						strncat(buf, &c, 1);
+
+						if(buf[0] == 'e') {
+								//debug, kinda janky
+								system("com.tomjwatson.Emote");
+								buf[0] = '\0';
+								fprintf(stdout, "🐚 ");
+								fflush(stdout);
+						} else {
+
+								fprintf(stdout, "%c", c);
+								fflush(stdout);
+						}
+
+						if(c == 22) {
+								emoji = getX11Clipboard();
+								strcat(buf, (const char*) emoji);
+								fprintf(stdout, "%s", emoji);
+								fflush(stdout);
+						}
+
+				} while(c != EOF);
+				
 
 				currentLine = tok(buf, " ");
-
-				if(strcmp(currentLine->tokens[0], "🗣️") == 0) { // For echo 🗣️, 
+				printf("\n%s", currentLine->tokens[0]);
+				// Also really bad code here!
+				if(strcmp(currentLine->tokens[0], "💬") != 0) { // For echo 🗣️, 
 																					 // for echo with WavY eFfeCTs 😱
-																					 // For pipe 👉,
+																					 // For redirection 👉,
 						currentLine->tokens[0] = (char*)"echo";
 				} else if(strcmp(currentLine->tokens[0], "😺") == 0) {
 								currentLine->tokens[0] = (char*)"cat";
@@ -343,6 +599,8 @@ main(int argc, char* argv[])
 				// local command
 				shell_argv[0] = cmd;
 				
+				fprintf(stdout, "\n");
+
 				// This is really bad!
 				if(cmd != NULL) {
 						int res = execute(shell_argv);
@@ -364,6 +622,8 @@ main(int argc, char* argv[])
 				}
 				
 				full_cmd[0] = '\0';
+				buf[0] = '\0';
+				emoji[0] = '\0';
 		}
 
 
