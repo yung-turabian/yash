@@ -4,7 +4,7 @@
 int
 main(int argc, char* argv[])
 {
-		size_t i;
+		int i;
 		for(i=1;i<argc;i++)
 		{
 				fprintf(stdout, "%s ", argv[i]);

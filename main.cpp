@@ -1,44 +1,13 @@
-// Unix system
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <termios.h>
-#include <unistd.h>
-#include <signal.h>
-#include <dirent.h>
-#include <errno.h>
-// C libs
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <cstdint>
-// Extra libs
-#include <ncurses.h>
-
-// Exit codes, for child processes and program
-#ifndef CHILD_EXIT_CODE
-		#define CHILD_EXIT_CODE 42
-#endif
-
-#define EXPECTED_CHILD_EXIT_CODE 42
-
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-#define EXIT_COMMAND_NOT_FOUND 127
-#define EXIT_BINARY_CORRUPTION 132 // binary corruption
-#define EXIT_ABORTED 133 // dividng an int by zero
-#define EXIT_FAILED_ASSERTION 134
-#define EXIT_TOO_MUCH_MEMORY 137
-#define SEGMENTATION_FAULT 139
+// Components
+#include "include/YaSH_stdinc.h"
+#include "include/builtin.h"
+#include "util.cpp"
 
 #define MAX_TOKENS 6
 #define MAX_STRING 80
 
-
 #define quit "❌"
 #define ls "👀"
-
-// Typedefs
-typedef uint8_t u8;
 
 /*
  *	Just setup working wit NCurses, handling termios stuff seems a little
@@ -59,7 +28,6 @@ typedef uint8_t u8;
  *
  */
 
-
 void 
 sgets(char* str, int n)
 {
@@ -73,6 +41,27 @@ sgets(char* str, int n)
 		}
 
 		if(str[i] == '\n') str[i] = '\0';
+}
+
+pid_t call(char* argv[]);
+
+int
+execute(char* argv[])
+{
+		int i;
+
+		if(argv[0] == NULL) {
+				return 1; // empty command
+		}
+
+		for(i = 0; i < num_builtins(); i++) {
+				if(strcmp(argv[0], builtin_directory[i]) == 0) {
+						return (*builtin_func[i])(argv);
+				}
+		}
+
+		//return call(argv);
+		return -1;
 }
 
 size_t iteration = 0;
@@ -113,10 +102,8 @@ call(char* argv[])
 				
 				if(execve(argv[0], newargv, newenviron) == -1) {
 						perror("execve");
-						exit(EXIT_FAILURE);
 				}
-
-				exit(EXIT_SUCCESS);
+				exit(EXIT_FAILURE); // only reached if perror is called
 		
 		default: 
 				int status;
@@ -225,7 +212,7 @@ reset_terminal()
 {
 		printf("\em"); //reset color changes
 		fflush(stdout);
-		tcsetattr(STDIN_FILENO, TCSANOW, &shell_tmodes);
+		tcsetattr(shell_terminal, TCSANOW, &shell_tmodes);
 }
 
 void
@@ -248,12 +235,14 @@ init_shell()
 						kill(- shell_pgid, SIGTTIN);
 				
 				/* Ignore interactive and job-control signals.  */
-				signal (SIGINT, SIG_IGN);
+				//signal (SIGINT, SIG_IGN); // ^C
 				signal (SIGQUIT, SIG_IGN);
-				signal (SIGTSTP, SIG_IGN);
+				signal (SIGTSTP, SIG_IGN); // ^Z
 				signal (SIGTTIN, SIG_IGN);
 				signal (SIGTTOU, SIG_IGN);
 				signal (SIGCHLD, SIG_IGN);
+				// VERASE ^H or ^?
+				// VSTOP AND VSTART, ^S and ^Q
 
 				shell_pgid = getpid();
 				if(setpgid(shell_pgid, shell_pgid) < 0) {
@@ -271,6 +260,12 @@ init_shell()
 
 
 				//new_t.c_lflag &= ~(ISIG);
+				//new_t.c_lflag &= ~(ICANON);
+				//new_t.c_iflag &= (IUTF8);
+				//new_t.c_cflag;
+				//new_t.c_oflag &= (IUTF8);
+				// OLCUC for all uppercase, shout!
+				//cc_t c_cc[NCCS];
 				//shell_tmodes.c_oflag = 0; 
 				
 				if(tcsetattr(shell_terminal, TCSANOW, &new_t) < 0) { }
@@ -305,14 +300,12 @@ main(int argc, char* argv[])
 	
 		BufferedLine* currentLine;
 		DIR *current_dir;
-		struct dirent *dp;
+		//struct dirent *dp;
 
 		if((current_dir = opendir(".")) == NULL) {
-				perror("[🐚yash] couldn't open '.'");
+				fprintf(stderr, "[🐚yash] couldn't open '.'");
 				return EXIT_FAILURE;
 		}
-
-
 		
 		
 		char* buf;
@@ -347,19 +340,25 @@ main(int argc, char* argv[])
 				}
 				shell_argv[1] = arg;
 
-				if(strcmp(cmd, quit) == 0 || strcmp(cmd, "quit") == 0 ) break;
-				
 				// local command
 				shell_argv[0] = cmd;
 				
+				// This is really bad!
 				if(cmd != NULL) {
-						if(lookup(cmd, path)) {
-								strcat(full_cmd, path); 
-								strcat(full_cmd, cmd);
-								shell_argv[0] = full_cmd;
+						int res = execute(shell_argv);
+						if(res == -1) {
+
+								if(lookup(cmd, path)) {
+										strcat(full_cmd, path); 
+										strcat(full_cmd, cmd);
+										shell_argv[0] = full_cmd;
 
 
-								call(shell_argv);
+										call(shell_argv);
+								} 
+						} else if(res == EXIT_CALLED_FROM_CMD) {	break; }
+						else {
+								continue;
 						}
 
 				}
@@ -368,12 +367,7 @@ main(int argc, char* argv[])
 		}
 
 
-
-
-
 		
-
-		close(fd);	
 
 		// Cleanup
 		free(currentLine->tokens);
