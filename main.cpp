@@ -10,15 +10,15 @@
 #define ls "👀"
 
 /*
- *	Just setup working wit NCurses, handling termios stuff seems a little
- *	like a waste of time.
  *
  *
  *	Redirection. Probably just detect if its a file and then open an fstream and write to
  *	that file :)
- *	
- *	use execveat(2) if passed a path as an additiona argument
- *	https://man7.org/linux/man-pages/man2/execveat.2.html
+ *	https://stackoverflow.com/questions/35569673/implementing-input-output-redirection-in-a-linux-shell-using-c
+*	
+*	https://www.gnu.org/software/bash/manual/html_node/Redirections.html#Redirecting-Output
+ *	https://man7.org/linux/man-pages/man2/dup.2.html
+ *
  *
  *	
  *	Figure out piping
@@ -27,21 +27,6 @@
 *		Clean up kids and job management
  *
  */
-
-void 
-sgets(char* str, int n)
-{
-		char* str_read = fgets(str, n, stdin);
-		if(!str_read) return;
-
-		int i=0;
-		while(str[i] != '\n' && str[i] != '\0')
-		{
-				i++;
-		}
-
-		if(str[i] == '\n') str[i] = '\0';
-}
 
 pid_t call(char* argv[]);
 
@@ -270,13 +255,15 @@ init_shell()
 				new_t.c_lflag &= ~(ICANON | ECHO);
 				new_t.c_cc[VTIME] = 0;
 				new_t.c_cc[VMIN] = 1;
-				new_t.c_cc[VERASE] = 0;
+				new_t.c_cc[VERASE] = 1;
 				//new_t.c_iflag &= (IUTF8);
 				//new_t.c_cflag;
 				//new_t.c_oflag &= (IUTF8);
 				// OLCUC for all uppercase, shout!
 				//cc_t c_cc[NCCS];
-				//shell_tmodes.c_oflag = 0; 
+				//shell_tmodes.c_oflag = 0;
+
+				if(cfsetispeed(&new_t, B9600) < 0 || cfsetospeed(&new_t, B9600) < 0){ }
 				
 				if(tcsetattr(shell_terminal, TCSANOW, &new_t) < 0) { }
 
@@ -286,20 +273,6 @@ init_shell()
 
 
 
-}
-
-int
-read_key(char* buf, int k)
-{
-		if(buf[k] == '\033' && buf[k + 1] == '[') {
-				switch(buf[k + 2]) {
-						case 'A': return 1; // up
-						case 'B': return 2; // down
-						case 'C': return 3; // right
-						case 'D': return 4; // left
-				}
-		}
-		return -1; //something went wrong
 }
 
 #include <X11/Xlib.h> // for linx clipboard
@@ -501,21 +474,42 @@ getX11Clipboard()
     }
 }
 
-int
-getc()
-{
-		int c;
-		c = 0;
+const char* YASH_ECHO = (const char*)"💬";
 
-		read(0, &c, 4);
-		return c;
+#define ASCII_ESC 27
+
+void
+getCursorPosition(int* rows, int* cols)
+{
+		char buf[32];
+		u8 i = 0;
+
+		write(STDOUT_FILENO, "\x1b[6n", 4);
+
+
+    // Read the response
+    while (i < sizeof(buf) - 1) {
+        if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
+        if (buf[i] == 'R') break;
+        i++;
+    }
+    buf[i] = '\0';
+
+    // Parse the response
+    if (buf[0] == '\x1b' && buf[1] == '[') {
+        sscanf(&buf[2], "%d;%d", rows, cols);
+    }
 }
 
+#include "linker.cpp"
 
 int 
 main(int argc, char* argv[])
 {
-		
+		if (setenv("TERM", "xterm-256color", 1) != 0) {
+        return 1;
+    }
+
 		//get();
 		init_shell();
 
@@ -530,100 +524,138 @@ main(int argc, char* argv[])
 		
 		
 		char* buf;
+		char* hist;
+
+		u8 buf_len;
 		char* path = (char*)"/usr/bin/";
 		char full_cmd[50] = "";
 		char* shell_argv[2];
 		unsigned char* emoji;
 
 		buf = (char*)malloc(sizeof(char) * 4096);
-		
+		hist = (char*)malloc(sizeof(char) * 4096);
+		buf_len = 0;
+
+		bool enter = false;
+
 
 		// FIX THIS PLEAS!!!
 		for(;;)
 		{
-				fprintf(stdout, "🐚 ");
-				fflush(stdout);
+				fprintf(stdout, "🐚 %c7", ASCII_ESC);
 				
 				// pretty shit, rework
 				char c;
 				do {
-						c = getc();
-						if(c == 10) { // LF
-								break;
+						//fprintf(stdout, "%c[2K\r", ASCII_ESC);
+						fprintf(stdout, "%c8", ASCII_ESC);
+						fprintf(stdout, "%s%c[0K", buf, ASCII_ESC);
+						//printf("%d", buf_len);
+						fflush(stdout);
+
+						c = getchar();
+
+						switch(c) {
+								case 9: //TAB
+										break;
+								case 10: //LF
+										enter = true;
+										break;
+								case 12: //FF, CTRL-L
+										fprintf(stdout, "%c[2J%c[1;1H🐚 %c7", 
+														ASCII_ESC,ASCII_ESC,ASCII_ESC); 
+										break;
+								case 127: //DEL, very broken 
+										if(buf_len > 0) buf[--buf_len] = '\0';
+										break;
+								case 8: //BS
+										if(buf_len > 0) buf[--buf_len] = '\0';
+										break;
+								case 22: //CTRL-V, pretty sloppy
+										emoji = getX11Clipboard();
+										strcat(buf, (const char*) emoji);
+										fprintf(stdout, "%s", emoji);
+										fflush(stdout);
+										buf_len++;
+										buf_len++;
+										break;
+								/*case 'e':
+										//debug, kinda janky
+										char* argv[2];
+										argv[0] = (char*)"efck-chat-keyboard/efck-chat-keyboard";
+										call(argv);
+										buf[0] = '\0';
+										buf_len++;
+										break;*/
+								case ASCII_ESC:
+										getchar();
+										switch(getchar()) { 
+												case 'A': //Up arrow
+												printf("[yash🐚] Not implemented yet!\n");
+												break;
+										}
+										break;
+								default:
+										strncat(buf, &c, 1);
+										buf_len++;
+										break;
 						}
 
-						strncat(buf, &c, 1);
-
-						if(buf[0] == 'e') {
-								//debug, kinda janky
-								system("com.tomjwatson.Emote");
-								buf[0] = '\0';
-								fprintf(stdout, "🐚 ");
-								fflush(stdout);
-						} else {
-
-								fprintf(stdout, "%c", c);
-								fflush(stdout);
-						}
-
-						if(c == 22) {
-								emoji = getX11Clipboard();
-								strcat(buf, (const char*) emoji);
-								fprintf(stdout, "%s", emoji);
-								fflush(stdout);
-						}
+						if(enter) {enter = false; buf_len = 0; break;}
 
 				} while(c != EOF);
-				
 
-				currentLine = tok(buf, " ");
-				printf("\n%s", currentLine->tokens[0]);
-				// Also really bad code here!
-				if(strcmp(currentLine->tokens[0], "💬") != 0) { // For echo 🗣️, 
-																					 // for echo with WavY eFfeCTs 😱
-																					 // For redirection 👉,
-						currentLine->tokens[0] = (char*)"echo";
-				} else if(strcmp(currentLine->tokens[0], "😺") == 0) {
-								currentLine->tokens[0] = (char*)"cat";
-				}
-				char* cmd = currentLine->tokens[0];
-				
-				char* arg;
-				if(currentLine->argc > 1) {
-						arg = currentLine->tokens[1];
-				} else {
-						arg = NULL;
-				}
-				shell_argv[1] = arg;
+				if(buf[0] != '\0') {
+						currentLine = tok(buf, " ");
+						link(currentLine->tokens, currentLine->argc);
 
-				// local command
-				shell_argv[0] = cmd;
-				
-				fprintf(stdout, "\n");
-
-				// This is really bad!
-				if(cmd != NULL) {
-						int res = execute(shell_argv);
-						if(res == -1) {
-
-								if(lookup(cmd, path)) {
-										strcat(full_cmd, path); 
-										strcat(full_cmd, cmd);
-										shell_argv[0] = full_cmd;
-
-
-										call(shell_argv);
-								} 
-						} else if(res == EXIT_CALLED_FROM_CMD) {	break; }
-						else {
-								continue;
+						char* cmd = currentLine->tokens[0];
+						
+						char* arg;
+						if(currentLine->argc > 1) {
+								arg = currentLine->tokens[1];
+						} else {
+								arg = NULL;
 						}
+						shell_argv[1] = arg;
+						
 
-				}
+						// local command
+						shell_argv[0] = cmd;
+						
+						fprintf(stdout, "\n");
+
+						// This is really bad!
+						if(cmd != NULL) {
+								int res = execute(shell_argv);
+								if(res == -1) {
+
+										if(lookup(cmd, path)) {
+												strcat(full_cmd, path); 
+												strcat(full_cmd, cmd);
+												shell_argv[0] = full_cmd;
+
+
+												call(shell_argv);
+
+												strcat(hist, shell_argv[0]);
+										} 
+								} else if(res == EXIT_CALLED_FROM_CMD) {	break; }
+								else {
+										continue;
+								}
+
+						}
+						
+						full_cmd[0] = '\0';
+						buf[0] = '\0';
+						emoji[0] = '\0';
+
+				} 
+				else {
 				
-				full_cmd[0] = '\0';
-				buf[0] = '\0';
-				emoji[0] = '\0';
+				fprintf(stdout, "\n"); //no input
+				}
 		}
 
 
