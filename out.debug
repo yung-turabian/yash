@@ -1,6 +1,6 @@
----2----------
-Parent: my child is 11821.
-Parent: Waiting for my child [11821].
-Parent: my child exited with status 24811.
+---0----------
+Parent: my child is 5930.
+Parent: Waiting for my child [5930].
+Parent: my child exited with status 32766.
 
 

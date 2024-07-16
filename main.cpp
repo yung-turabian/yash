@@ -1,7 +1,6 @@
 // Components
 #include "include/YaSH_stdinc.h"
 #include "include/builtin.h"
-#include "util.cpp"
 
 #define MAX_TOKENS 6
 #define MAX_STRING 80
@@ -10,7 +9,7 @@
 #define ls "👀"
 
 /*
- *
+ *	Integrate the SHELL.CPP and JOBS.CPP
  *
  *	Redirection. Probably just detect if its a file and then open an fstream and write to
  *	that file :)
@@ -120,6 +119,12 @@ call(char* argv[])
 		return pid;
 }
 
+void
+kill_and_get_children(pid_t *pid)
+{
+
+}
+
 typedef struct BufferedLine {
 		char** tokens;
 		int argc;
@@ -226,7 +231,7 @@ init_shell()
 						kill(- shell_pgid, SIGTTIN);
 				
 				/* Ignore interactive and job-control signals.  */
-				//signal (SIGINT, SIG_IGN); // ^C
+				signal (SIGINT, SIG_IGN); // ^C
 				//signal (SIGQUIT, SIG_IGN);
 				//signal (SIGTSTP, SIG_IGN); // ^Z
 				//signal (SIGTTIN, SIG_IGN);
@@ -556,6 +561,10 @@ main(int argc, char* argv[])
 						c = getchar();
 
 						switch(c) {
+								case 3: //^C
+										//kill(id, 9);
+										//Break up job processing to be able to identify and kill
+										break;
 								case 9: //TAB
 										break;
 								case 10: //LF
@@ -640,9 +649,10 @@ main(int argc, char* argv[])
 
 												strcat(hist, shell_argv[0]);
 										} 
-								} else if(res == EXIT_CALLED_FROM_CMD) {	break; }
+								} 
+								else if(res == EXIT_CALLED_FROM_CMD) {	break; }
 								else {
-										continue;
+										
 								}
 
 						}

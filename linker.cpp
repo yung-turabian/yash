@@ -16,6 +16,9 @@ link(char** tokens, int n)
 				else if(strcmp(tokens[i], "😺") == 0) {
 						tokens[i] = (char*)"cat";
 				}
+				else if(strcmp(tokens[i], "🦇") == 0) {
+						tokens[i] = (char*)"bat";
+				}
 				else if(strcmp(tokens[i], "👀") == 0) {
 						tokens[i] = (char*)"ls";	
 				}
@@ -26,7 +29,19 @@ link(char** tokens, int n)
 						tokens[i] = (char*)"pwd";	
 				}
 				else if(strcmp(tokens[i], "👉") == 0) {
-				
+						fprintf(stdout, "this does not work yet!\n");
+				}
+				else if(strcmp(tokens[i], "🆘") == 0) {
+						tokens[i] = (char*)"help";	
+				}
+				else if(strcmp(tokens[i], "🗑️") == 0) {
+						tokens[i] = (char*)"rm";	
+				}
+				else if(strcmp(tokens[i], "🤔") == 0) {
+						tokens[i] = (char*)"whoami";	
+				}
+				else if(strcmp(tokens[i], "❌") == 0) {
+						tokens[i] = (char*)"exit";	
 				}
 		}
 

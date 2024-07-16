@@ -44,4 +44,42 @@
 // Typedefs
 typedef uint8_t u8;
 
+// Data structures
+typedef struct process {
+		struct process* next; // next in the pipeline
+		char** argv;
+		pid_t pid; 
+		bool completed; 
+		bool stopped;
+		int status;
+} process;
+
+typedef struct job
+{
+		struct job* next; // next active job
+		char* command; // command line, used for messages
+		process* first_process; // list of prcesses in this job
+		pid_t pgid; // process group ID
+		bool notified;
+		struct termios tmodes; // saved terminal modes
+		int stdin, stdout, stderr; // std i/o channels
+} job;
+
+#include <fcntl.h>
+#include <sys/ioctl.h>
+typedef struct shell
+{
+		pid_t pgid;
+		struct termios tmodes;
+		struct winsize winsize;
+		int terminal;
+		int is_interactive;
+		char* device_name;
+
+} shell;
+static shell Shell;
+
+// active jobs are a linked list, here's the head
+static job *first_job = NULL;
+
 #endif
