@@ -1,4 +1,5 @@
 #include "include/shell.h"
+#include "include/jobs.h"
 
 void
 init_shell()
@@ -24,11 +25,11 @@ init_shell()
 				
 				/* Ignore interactive and job-control signals.  */
 				signal (SIGINT, SIG_IGN); // ^C
-				//signal (SIGQUIT, SIG_IGN);
-				//signal (SIGTSTP, SIG_IGN); // ^Z
-				//signal (SIGTTIN, SIG_IGN);
-				//signal (SIGTTOU, SIG_IGN);
-				//signal (SIGCHLD, SIG_IGN);
+				signal (SIGQUIT, SIG_IGN);
+				signal (SIGTSTP, SIG_IGN); // ^Z
+				signal (SIGTTIN, SIG_IGN);
+				signal (SIGTTOU, SIG_IGN);
+				signal (SIGCHLD, SIG_IGN);
 				// VERASE ^H or ^?
 				// VSTOP AND VSTART, ^S and ^Q
 

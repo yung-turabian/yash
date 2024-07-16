@@ -2,7 +2,11 @@
 
 int cd(char* argv[]) 
 {
-		if(argv[1] != NULL && strcmp(argv[1], "🆘") == 0) {
+		if(argv[1] == NULL) {
+				chdir(getenv("HOME")); // error check
+		}
+
+		if(strcmp(argv[1], "🆘") == 0) {
 				fprintf(stdout, 
 								"📦 - change the current working directory of YaSH\n");
 		}

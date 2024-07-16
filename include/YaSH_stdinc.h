@@ -42,9 +42,13 @@
 #define EXIT_CALLED_FROM_CMD 69
 
 // Typedefs
+
 typedef uint8_t u8;
+typedef uint32_t u32;
+typedef uint16_t u16;
 
 // Data structures
+
 typedef struct process {
 		struct process* next; // next in the pipeline
 		char** argv;
@@ -77,7 +81,7 @@ typedef struct shell
 		char* device_name;
 
 } shell;
-static shell Shell;
+inline shell Shell; // might change later
 
 // active jobs are a linked list, here's the head
 static job *first_job = NULL;

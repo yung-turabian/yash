@@ -45,4 +45,9 @@ void format_job_info(job *j, const char* status);
 // Notify user about stopped/terminated jobs
 void do_job_notification();
 
+job* parse();
+void free_job();
+
+void signal_handler(int sig);
+
 #endif
