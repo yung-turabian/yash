@@ -52,8 +52,7 @@ jobs:
       run: ./echo Hello, World!
 
     - name: Test open/close shell
-      run: |
-        echo "❌" | ./app
+      run: echo "❌" | ./app
 
     - name: Test calling ls(👀) and then exit(❌)
       run: |
