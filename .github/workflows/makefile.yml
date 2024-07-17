@@ -53,7 +53,11 @@ jobs:
 
     - name: Test open/close shell
       run: |
-        ./app <<EOF
-        ❌
-        EOF
+        echo "❌" | ./app
+
+    - name: Test calling ls(👀) and then exit(❌)
+      run: |
+        echo -e "👀\n❌" > cmd.sh && 
+        chmod +x cmd.sh  && 
+        ./app < cmd.sh
       
