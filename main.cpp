@@ -5,11 +5,6 @@
 #include "include/jobs.h"
 #include "include/YaSH_x11.h"
 
-#include <thread>
-#include <mutex>
-
-std::mutex buffer_mutex;
-
 #define MAX_TOKENS 6
 #define MAX_STRING 80
 
@@ -17,7 +12,7 @@ std::mutex buffer_mutex;
 #define ls "👀"
 
 /*
- *	Integrate the SHELL.CPP and JOBS.CPP
+ *	Add LOGGING with PLOG
  *
  *	Redirection. Probably just detect if its a file and then open an fstream and write to
  *	that file :)
@@ -70,6 +65,7 @@ call(char *argv[])
 
 		p->next = NULL;
 		p->argv = (char**)malloc(4096 * sizeof(char*));
+		j->command = argv[0];
 		p->argv = argv;
 		p->completed = false;
 		p->stopped = false;
@@ -84,7 +80,7 @@ call(char *argv[])
 		// update linked list head
 		j->next = first_job;
 		first_job = j;
-
+		
 		launch_job(j, true);
 		return j;
 }
@@ -188,9 +184,9 @@ getCursorPosition(int* rows, int* cols)
 #include "linker.cpp"
 
 void
-handle_input(char* buf, u8 *buf_len, bool *enter)
+handle_input(char* buf, u8 *buf_len)
 {
-
+		bool breakout = false;
 		unsigned char* emoji;
 		// pretty shit, rework
 		char c;
@@ -211,7 +207,7 @@ handle_input(char* buf, u8 *buf_len, bool *enter)
 						case 9: //TAB
 								break;
 						case 10: //LF
-								*enter = true;
+								breakout = true;
 								break;
 						case 12: //FF, CTRL-L
 								fprintf(stdout, "%c[2J%c[1;1H🐚 %c7", 
@@ -249,12 +245,77 @@ handle_input(char* buf, u8 *buf_len, bool *enter)
 								(*buf_len)++;
 								break;
 				}
-		} while(c != EOF && !(*enter));
+		} while(c != EOF && !(breakout));
+}
+
+void
+execute_command(char* buf)
+{
+		BufferedLine* currentLine;
+		if(buf[0] != '\0') {
+				currentLine = tok(buf, " ");
+
+				char* shell_argv[3]; // Needs to be null-terminated
+				
+				link(currentLine->tokens, currentLine->argc);
+
+				char* cmd = currentLine->tokens[0];
+				
+				char* arg;
+				if(currentLine->argc > 1) {
+						arg = currentLine->tokens[1];
+				} else {
+						arg = NULL;
+				}
+				shell_argv[1] = arg;
+				shell_argv[2] = NULL;
+				
+
+				// local command
+				shell_argv[0] = cmd;
+				
+				fprintf(stdout, "\n");
+
+				// This is really bad!
+				if(cmd != NULL) {
+						int res = execute(shell_argv);
+						if(res == -1) {
+
+								call(shell_argv);
+
+								//strcat(hist, shell_argv[0]);
+						} 
+						else if(res == EXIT_CALLED_FROM_CMD) {	exit(EXIT_CALLED_FROM_CMD); }
+						else {
+								
+						}
+				} 
+
+				free(currentLine->tokens);
+				free(currentLine);
+		}
+
+}
+
+#include <pthread.h>
+
+void* job_notification_thread(void *arg) {
+    while (1) {
+        //do_job_notification();
+        sleep(1);  // Sleep for a second to avoid busy-waiting
+    }
+    return NULL;
 }
 
 int 
 main(int argc, char* argv[])
 {
+		if(argc > 1 && strcmp(argv[1], "-v") == 0) {
+				fprintf(stdout, "[YaSH🐚] version 0.1.0\n");
+				return EXIT_SUCCESS;
+		}
+
+
 		if (setenv("TERM", "xterm-256color", 1) != 0) {
         return 1;
     }
@@ -262,105 +323,57 @@ main(int argc, char* argv[])
 		//get();
 		init_shell();
 
-		BufferedLine* currentLine;
-		DIR *current_dir;
+    pthread_t notif_thread;
+    if (pthread_create(&notif_thread, NULL, job_notification_thread, NULL) != 0) {
+        perror("pthread_create");
+        exit(1);
+    }
+
+		//DIR *current_dir;
 		//struct dirent *dp;
 
-		if((current_dir = opendir(".")) == NULL) {
+		/*if((current_dir = opendir(".")) == NULL) {
 				fprintf(stderr, "[🐚yash] couldn't open '.'");
 				return EXIT_FAILURE;
-		}
+		}*/
 		
 		
 		char* buf;
-		char* hist;
+		//char* hist;
 
 		u8 buf_len;
-		char* path = (char*)"/usr/bin/";
-		char full_cmd[50] = "";
-		char* shell_argv[2];
 
 		buf = (char*)malloc(sizeof(char) * 4096);
-		hist = (char*)malloc(sizeof(char) * 4096);
+		//hist = (char*)malloc(sizeof(char) * 4096);
 		buf_len = 0;
-
-		bool enter = false;
 
 
 		// FIX THIS PLEAS!!!
 		for(;;)
 		{
-				do_job_notification();
+
 				fprintf(stdout, "🐚 %c7", ASCII_ESC);
 
-				handle_input(buf, &buf_len, &enter);
+				handle_input(buf, &buf_len);
 
-				if(enter) {
-						execute_command(buf, &buf_len);
+				if(buf[0] != '\0') {
+
+						execute_command(buf);
+
 						buf_len = 0;
 						buf[0] = '\0';
 
-						enter = false;
 				} else {
 						fprintf(stdout, "\n"); //no input
 				}
-				
-				
-				if(buf[0] != '\0') {
-						currentLine = tok(buf, " ");
-						link(currentLine->tokens, currentLine->argc);
 
-						char* cmd = currentLine->tokens[0];
-						
-						char* arg;
-						if(currentLine->argc > 1) {
-								arg = currentLine->tokens[1];
-						} else {
-								arg = NULL;
-						}
-						shell_argv[1] = arg;
-						
-
-						// local command
-						shell_argv[0] = cmd;
-						
-						fprintf(stdout, "\n");
-
-						// This is really bad!
-						if(cmd != NULL) {
-								int res = execute(shell_argv);
-								if(res == -1) {
-
-										//if(lookup(cmd, path)) {
-												//strcat(full_cmd, path); 
-												//strcat(full_cmd, cmd);
-												//shell_argv[0] = full_cmd;
-
-
-										call(shell_argv);
-
-										strcat(hist, shell_argv[0]);
-										//} 
-								} 
-								else if(res == EXIT_CALLED_FROM_CMD) {	break; }
-								else {
-										
-								}
-
-						}
-						
-						full_cmd[0] = '\0';
-				} 
 		}
 
 
 		
 
 		// Cleanup
-		free(currentLine->tokens);
-		free(buf);
-		free(currentLine);
-		closedir(current_dir);
+		//closedir(current_dir);
 
 		
 		

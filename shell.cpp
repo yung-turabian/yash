@@ -1,6 +1,8 @@
 #include "include/shell.h"
 #include "include/jobs.h"
 
+void signal_handler(int sig);
+
 void
 init_shell()
 {
@@ -11,11 +13,11 @@ init_shell()
 		Shell.device_name = ttyname(Shell.terminal);
 		ioctl(0, TIOCGWINSZ, &Shell.winsize); // get terminal size
 		
-		// Debug print
-		fprintf(stdout, "[yash🐚] Shell is interactive: %d \n"
-										"	 Device name: %s \n"
-										"  Lines %d\n", Shell.is_interactive, 
-										Shell.device_name, Shell.winsize.ws_row);
+		struct sigaction sa;
+		
+		clog(INFO, "Shell is interactive: %d", Shell.is_interactive);
+		clog(INFO, "Device name: %s ", Shell.device_name);
+		clog(INFO, "Lines %d\n", Shell.winsize.ws_row);
 
 		if(Shell.is_interactive) {
 				
@@ -29,7 +31,13 @@ init_shell()
 				signal (SIGTSTP, SIG_IGN); // ^Z
 				signal (SIGTTIN, SIG_IGN);
 				signal (SIGTTOU, SIG_IGN);
-				signal (SIGCHLD, SIG_IGN);
+				//signal (SIGCHLD, SIG_IGN);
+
+				sa.sa_handler = signal_handler;
+				sigemptyset(&sa.sa_mask);
+				sa.sa_flags = SA_RESTART;
+
+				sigaction(SIGCHLD, &sa, NULL);
 				// VERASE ^H or ^?
 				// VSTOP AND VSTART, ^S and ^Q
 
@@ -44,17 +52,16 @@ init_shell()
 				// grab control of term
 				tcsetpgrp(Shell.terminal, Shell.pgid);
 				// save default term attribs for shell
-				tcgetattr(Shell.terminal, &Shell.tmodes);
+				tcgetattr(Shell.terminal, &Shell.ORIGINAL_TMODES);
 
-				struct termios new_tmodes;
-				memcpy(&new_tmodes, &Shell.tmodes, sizeof(new_tmodes));
+				memcpy(&Shell.tmodes, &Shell.ORIGINAL_TMODES, sizeof(Shell.ORIGINAL_TMODES));
 
 
 				//new_t.c_lflag &= ~(ISIG);
-				new_tmodes.c_lflag &= ~(ICANON | ECHO);
-				new_tmodes.c_cc[VTIME] = 0;
-				new_tmodes.c_cc[VMIN] = 1;
-				new_tmodes.c_cc[VERASE] = 1;
+				Shell.tmodes.c_lflag &= ~(ICANON | ECHO);
+				Shell.tmodes.c_cc[VTIME] = 0;
+				Shell.tmodes.c_cc[VMIN] = 1;
+				Shell.tmodes.c_cc[VERASE] = 1;
 				//new_t.c_iflag &= (IUTF8);
 				//new_t.c_cflag;
 				//new_t.c_oflag &= (IUTF8);
@@ -62,9 +69,10 @@ init_shell()
 				//cc_t c_cc[NCCS];
 				//shell_tmodes.c_oflag = 0;
 
-				if(cfsetispeed(&new_tmodes, B9600) < 0 || cfsetospeed(&new_tmodes, B9600) < 0){ }
+				if(cfsetispeed(&Shell.tmodes, B9600) < 0 
+								|| cfsetospeed(&Shell.tmodes, B9600) < 0){ }
 				
-				if(tcsetattr(Shell.terminal, TCSANOW, &new_tmodes) < 0) { }
+				if(tcsetattr(Shell.terminal, TCSANOW, &Shell.tmodes) < 0) { }
 
 				//printf("\e[?25l"); // hides cursor
 				atexit(reset_terminal);
@@ -79,5 +87,24 @@ reset_terminal()
 {
 		printf("\em"); //reset color changes
 		fflush(stdout);
-		tcsetattr(Shell.terminal, TCSANOW, &Shell.tmodes);
+		tcsetattr(Shell.terminal, TCSANOW, &Shell.ORIGINAL_TMODES);
+}
+
+
+void 
+signal_handler(int sig) {
+    switch (sig) {
+        case SIGCHLD: //sent to parent when child stops
+						do_job_notification();
+            break;
+        case SIGINT:
+        case SIGTSTP:
+
+            do_job_notification();
+            break;
+				case SIGCONT:
+
+            do_job_notification();
+						break;
+    }
 }

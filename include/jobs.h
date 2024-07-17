@@ -2,6 +2,9 @@
 #define YASH_JOBS_H
 #include "YaSH_stdinc.h"
 
+
+inline job *first_job = NULL;
+
 // associated with data struct, job
 job* find_job(pid_t pgid);
 

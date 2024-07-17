@@ -23,6 +23,8 @@
 // Extra libs
 #include <ncurses.h>
 
+#include "yungLog.h"
+
 // Exit codes, for child processes and program
 #ifndef CHILD_EXIT_CODE
 		#define CHILD_EXIT_CODE 42
@@ -74,6 +76,7 @@ typedef struct job
 typedef struct shell
 {
 		pid_t pgid;
+		struct termios ORIGINAL_TMODES;
 		struct termios tmodes;
 		struct winsize winsize;
 		int terminal;
@@ -83,7 +86,5 @@ typedef struct shell
 } shell;
 inline shell Shell; // might change later
 
-// active jobs are a linked list, here's the head
-static job *first_job = NULL;
 
 #endif

@@ -2,7 +2,6 @@
 #include "include/jobs.h"
 
 
-
 // Command to list all active jobs
 // Command to send a SIGKILL to a job
 
@@ -12,10 +11,10 @@ find_job(pid_t pgid)
 {
 		job *j;
 
-		for(j=first_job; j; j = j->next) {
+		for(j=first_job; j; j = j->next) 
 				if(j->pgid == pgid)
 						return j;
-		}
+		
 		return NULL;
 }
 
@@ -25,10 +24,10 @@ job_is_stopped(job *j)
 {
 		process *p;
 
-		for(p=j->first_process; p; p = p->next) {
+		for(p=j->first_process; p; p = p->next) 
 				if(!p->completed && !p->stopped)
 						return false;
-		}
+		
 		return true;
 }
 
@@ -37,10 +36,10 @@ job_is_completed(job* j)
 {
 		process *p;
 
-		for(p=j->first_process; p; p = p->next) {
+		for(p=j->first_process; p; p = p->next)
 				if(!p->completed)
 						return false;
-		}
+		
 		return true;
 }
 
@@ -65,11 +64,8 @@ launch_process(process *p, pid_t pgid,
 				else {
 						if(foreground) {
 
-								printf("deubg\n");
-								if(tcsetpgrp(Shell.terminal, pgid) != 0) {
-
+								if(tcsetpgrp(Shell.terminal, pgid) != 0)
 										perror("tcsetpgrp() error");
-								}
 								else 
 								{
 								
@@ -81,92 +77,31 @@ launch_process(process *p, pid_t pgid,
 										signal (SIGTTOU, SIG_DFL);
 										signal (SIGCHLD, SIG_DFL);
 										
-										// config std i/o channels of new process.
-										if(infile != STDIN_FILENO) {
-												dup2(infile, STDIN_FILENO);
-												close(infile);
-										}
-										if(outfile != STDOUT_FILENO) {
-												dup2(outfile, STDOUT_FILENO);
-												close(outfile);
-										}
-										if(errfile != STDERR_FILENO) {
-												dup2(errfile, STDERR_FILENO);
-												close(errfile);
-										}
-
-										// exec new process
-										execvp(p->argv[0], p->argv); // this will take int account PATH var
-										perror("execvp");
-										exit(EXIT_FAILURE);
-							}
+								}
 						}
 				}
 		}
-}
 
-/*
-pid_t
-call(char* argv[])
-{
-		pid_t pid;
-		
-		if(signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-				perror("signal");
-				exit(EXIT_FAILURE);
+		// config std i/o channels of new process.
+		if(infile != STDIN_FILENO) {
+				dup2(infile, STDIN_FILENO);
+				close(infile);
+		}
+		if(outfile != STDOUT_FILENO) {
+				dup2(outfile, STDOUT_FILENO);
+				close(outfile);
+		}
+		if(errfile != STDERR_FILENO) {
+				dup2(errfile, STDERR_FILENO);
+				close(errfile);
 		}
 
-		pid = fork();
-		switch(pid) {
-		case -1:
-				perror("fork");
-				return(EXIT_FAILURE);
-		
-		case 0: 
-				fprintf(fptr, "Child: my internal pid is %d. \e[0m\n", pid);
-				fprintf(fptr, "Child: Exiting with exit code %d. \e[0m\n", CHILD_EXIT_CODE);
-				
-				static char *newargv[] = {NULL, NULL, NULL, NULL};
-				static char *newenviron[] = {NULL};
+		// exec new process
+		execvp(p->argv[0], p->argv); // this will take int account PATH var
+		perror("execvp");
+		exit(EXIT_FAILURE);
 
-				newargv[0] = argv[0];
-				newargv[1] = argv[1];
-				
-				if(execve(argv[0], newargv, newenviron) == -1) {
-						perror("execve");
-				}
-				exit(EXIT_FAILURE); // only reached if perror is called
-		
-		default: 
-				int status;
-
-				fprintf(fptr, "Parent: my child is %d.\n", pid);
-				fprintf(fptr, "Parent: Waiting for my child [%d].\n", pid);
-
-				waitpid(pid, &status, 0);
-
-				fprintf(fptr, "Parent: my child exited with status %d.\n", status);
-				if(WIFEXITED(status))
-				{
-						fprintf(fptr, "Parent: my child's exit code is %d.\n", WIFEXITED(status));
-
-						if(WEXITSTATUS(status) == EXPECTED_CHILD_EXIT_CODE) {
-								fprintf(fptr, "Parent: that's the code I expected.\n");
-						} 
-						else {
-								fprintf(fptr, "Parent: that exit code is unexpected...\n");
-						}
-
-				}
-				
-
-		}
-		
-		fprintf(fptr, "\n\n");
-		fclose(fptr);
-		return pid;
 }
-*/
 
 void
 launch_job(job *j, bool foreground)
@@ -188,11 +123,11 @@ launch_job(job *j, bool foreground)
 				}
 				else
 						outfile = j->stdout;
+				
 				//check for builtin commands
 
 				// Fork child processes.
 				pid = fork();
-
 				if(pid < 0) {//error
 								perror("fork");
 								exit(EXIT_FAILURE);
@@ -292,12 +227,13 @@ mark_process_status(pid_t pid, int status)
 		job *j;
 		process *p;
 
+
 		if(pid > 0)
 		{
+				
 				// update record for process
 				for(j=first_job; j; j=j->next) {
 						for(p=j->first_process; p; p=p->next) 
-						{
 								if(p->pid == pid) {
 										p->status = status;
 										if(WIFSTOPPED(status))
@@ -310,25 +246,23 @@ mark_process_status(pid_t pid, int status)
 										}
 										return 0; //All is well!
 								}
-						fprintf(stderr, "No child process %d.\n", pid);
-						return -1;
-						}
 				}
+				fprintf(stderr, "No child process %d.\n", pid);
+				return -1;
 		} 
-		else if(pid == 0 || errno == ECHILD) 
+		else if(pid == 0 || errno == ECHILD) {
 				// no processes ready to report
 				return -1;
-		else {
+		}else {
 				// weird things going on here
 				perror("waitpid");
 				return -1;
 		}
-		return -1;
 }
 
 // Check process that have status info available, won't block process
 void
-update_status()
+update_status(void)
 {
 		int status;
 		pid_t pid;
@@ -346,9 +280,9 @@ wait_for_job(job *j)
 		int status;
 		pid_t pid;
 
-		do
+		do {
 				pid = waitpid(WAIT_ANY, &status, WUNTRACED);
-		while(!mark_process_status(pid, status)
+		}while(!mark_process_status(pid, status)
 						&& !job_is_stopped(j)
 						&& !job_is_completed(j));
 }
@@ -356,7 +290,7 @@ wait_for_job(job *j)
 void
 format_job_info(job *j, const char* status)
 {
-		fprintf(stderr, "%ld (%s): %s\n", (long)j->pgid, status, j->command);
+		clog(DEBUG, "%ld (%s): %s\n", (long)j->pgid, status, j->command);
 }
 
 void
@@ -367,19 +301,21 @@ free_job(job* j)
 
 		p = j->first_process;
 		int i;
+
 		while(p)
 		{
 				previous_p = p;
 				p = p->next;
 
 				i = 0;
+
 				while(previous_p->argv[i])
 						free(previous_p->argv[i++]);
 
-				free(previous_p->argv);
 				free(previous_p);
 		}
 		free(j);
+
 }
 
 // Notify user about stopped/terminated jobs
@@ -389,6 +325,7 @@ do_job_notification()
 		job *j, *jlast, *jnext;
 
 		update_status();
+
 
 		jlast = NULL;
 		for(j=first_job; j; j=jnext)
