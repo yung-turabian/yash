@@ -31,8 +31,7 @@ jobs:
 
     - name: Test open/close shell
       run: |
-        ./app
-        exit
+        echo "❌" | ./app 
 
   Build-On-Mac:
     name: Build YaSH on Mac
