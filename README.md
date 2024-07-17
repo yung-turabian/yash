@@ -1,11 +1,16 @@
-# YaSH🐚 - Yet Another SHell
+# YaSHY🐚
 
-yash is an attempt to bring the world of Emojis to the shell.
+yashy is an attempt to bring the world of Emojis to the shell.
 
 
 ## Philosophy
 
 Nihilism.
+
+## Features
+
+. Foreground and background jobs
+. Job processing system
 
 ## So Far...
 
