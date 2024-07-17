@@ -63,13 +63,19 @@ call(char *argv[])
         return NULL;
     }
 
+		size_t arg_count = 0;
+		while(argv[arg_count]) arg_count++;
+
+		p->argv = (char**)malloc((arg_count + 1) * sizeof(char*));
+		for(size_t i = 0; i < arg_count; i++)
+				p->argv[i] = strdup(argv[i]);
+		p->argv[arg_count] = NULL; // null terminate so execvp works
+		
 		p->next = NULL;
-		p->argv = (char**)malloc(4096 * sizeof(char*));
-		j->command = argv[0];
-		p->argv = argv;
 		p->completed = false;
 		p->stopped = false;
 		
+		j->command = argv[0];
 		j->pgid = 0;
 		j->first_process = p;
 		j->stdin = STDIN_FILENO;
@@ -183,6 +189,12 @@ getCursorPosition(int* rows, int* cols)
 
 #include "linker.cpp"
 
+const char* hist[40];
+int hist_len;
+int curr_hist_sel = 0;
+
+bool editing_line = false;
+
 void
 handle_input(char* buf, u8 *buf_len)
 {
@@ -194,27 +206,33 @@ handle_input(char* buf, u8 *buf_len)
 				//fprintf(stdout, "%c[2K\r", ASCII_ESC);
 				fprintf(stdout, "%c8", ASCII_ESC);
 				fprintf(stdout, "%s%c[0K", buf, ASCII_ESC);
-				//printf("%d", buf_len);
 				fflush(stdout);
 
 				c = getchar();
 
 				switch(c) {
 						case 3: //^C
-								//kill(id, 9);
-								//Break up job processing to be able to identify and kill
+								if(strlen(buf) == 0) {
+								}
 								break;
 						case 9: //TAB
 								break;
 						case 10: //LF
 								breakout = true;
+								editing_line = false;
+								if(strlen(buf) != 0) {
+										hist[hist_len++] = strdup(buf);
+										hist[hist_len] = "";
+										curr_hist_sel++;
+								}
 								break;
 						case 12: //FF, CTRL-L
 								fprintf(stdout, "%c[2J%c[1;1H🐚 %c7", 
 												ASCII_ESC,ASCII_ESC,ASCII_ESC); 
 								break;
-						case 127: //DEL, very broken 
+						case 127: //DEL
 						case 8: //BS
+								editing_line = true;
 								if(*buf_len > 0) buf[--(*buf_len)] = '\0';
 								break;
 						case 22: //CTRL-V, pretty sloppy
@@ -236,11 +254,24 @@ handle_input(char* buf, u8 *buf_len)
 								getchar(); //consume '['
 								switch(getchar()) { 
 										case 'A': //Up arrow
-										printf("[yash🐚] Not implemented yet!\n");
+										if(!editing_line && curr_hist_sel > 0) {
+												strcpy(buf, hist[--curr_hist_sel]);
+												*buf_len = strlen(hist[curr_hist_sel]);
+												editing_line = false;
+										}
+
+										break;
+
+										case 'B':
+										if(!editing_line && curr_hist_sel >= 0 && curr_hist_sel < hist_len)
+												strcpy(buf, hist[++curr_hist_sel]);
+												*buf_len = strlen(hist[curr_hist_sel]);
+												editing_line = false;
 										break;
 								}
 								break;
 						default:
+								editing_line = true;
 								strncat(buf, &c, 1);
 								(*buf_len)++;
 								break;
@@ -301,7 +332,7 @@ execute_command(char* buf)
 
 void* job_notification_thread(void *arg) {
     while (1) {
-        //do_job_notification();
+        do_job_notification();
         sleep(1);  // Sleep for a second to avoid busy-waiting
     }
     return NULL;
@@ -320,14 +351,15 @@ main(int argc, char* argv[])
         return 1;
     }
 
-		//get();
-		init_shell();
+		yungLog_create_fp("YaSH");
 
+		init_shell();
+		/*
     pthread_t notif_thread;
     if (pthread_create(&notif_thread, NULL, job_notification_thread, NULL) != 0) {
         perror("pthread_create");
         exit(1);
-    }
+    }*/
 
 		//DIR *current_dir;
 		//struct dirent *dp;
@@ -339,13 +371,14 @@ main(int argc, char* argv[])
 		
 		
 		char* buf;
-		//char* hist;
 
 		u8 buf_len;
 
 		buf = (char*)malloc(sizeof(char) * 4096);
-		//hist = (char*)malloc(sizeof(char) * 4096);
+		buf[0] = '\0';
+		//hist = (char**)malloc((sizeof(char) * 4096) * 10);
 		buf_len = 0;
+		hist_len = 0;
 
 
 		// FIX THIS PLEAS!!!

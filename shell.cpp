@@ -31,7 +31,6 @@ init_shell()
 				signal (SIGTSTP, SIG_IGN); // ^Z
 				signal (SIGTTIN, SIG_IGN);
 				signal (SIGTTOU, SIG_IGN);
-				//signal (SIGCHLD, SIG_IGN);
 
 				sa.sa_handler = signal_handler;
 				sigemptyset(&sa.sa_mask);
@@ -48,7 +47,7 @@ init_shell()
 										"[yash🐚] Couldn't put shell in it's own process group, ask Henry\n");
 						exit(EXIT_FAILURE);
 				}
-				
+				//
 				// grab control of term
 				tcsetpgrp(Shell.terminal, Shell.pgid);
 				// save default term attribs for shell

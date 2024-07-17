@@ -98,7 +98,7 @@ launch_process(process *p, pid_t pgid,
 
 		// exec new process
 		execvp(p->argv[0], p->argv); // this will take int account PATH var
-		perror("execvp");
+		fprintf(stderr, "[YaSH🐚] Unknow command: %s\n", p->argv[0]);
 		exit(EXIT_FAILURE);
 
 }
@@ -296,26 +296,47 @@ format_job_info(job *j, const char* status)
 void
 free_job(job* j)
 {
+		if (!j) return;
+
 		process *p;
 		process *previous_p;
 
 		p = j->first_process;
+		previous_p = NULL;
 		int i;
 
 		while(p)
 		{
 				previous_p = p;
 				p = p->next;
+				
+				if(previous_p->argv) {
+				for(i = 0; previous_p->argv[i]; i++) {
+						clog(DEBUG, 
+								 "Freeing previous_p->argv[%d]: %p", 
+								  i, (void*)previous_p->argv[i]);
+						free(previous_p->argv[i]);
+						previous_p->argv[i] = NULL;
+				}
 
-				i = 0;
+				clog(DEBUG,
+						 "Freeing previous_p->argv: %p", 
+						 (void*)previous_p->argv);
+				free(previous_p->argv);
+				previous_p = NULL;
+				}
 
-				while(previous_p->argv[i])
-						free(previous_p->argv[i++]);
-
+				clog(DEBUG,
+						 "Freeing previous_p: %p", 
+						 (void*)previous_p);
 				free(previous_p);
+				previous_p = NULL;
 		}
+		clog(DEBUG,
+				 "Freeing job: %p", 
+				 (void*)j);
 		free(j);
-
+		j = NULL;
 }
 
 // Notify user about stopped/terminated jobs

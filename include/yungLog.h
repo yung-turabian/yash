@@ -6,14 +6,17 @@ extern "C" {
 #endif
 
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 
-typedef enum {
-		COLOR_RESET = 0,
-		INFO,
+#define COLOR_RESET "\033[0m"
+
+typedef enum AnsiiColor_t {
+		INFO = 0,
 		DEBUG,
 		TRACE,
 		WARN,
@@ -21,47 +24,75 @@ typedef enum {
 		FATAL
 } AnsiiColor_t;
 
-#define COLOR_RESET "\033[0m"
+inline FILE *LogFptr;
 
 /** Logs a line of text */
-inline void yung_log(FILE *file, AnsiiColor_t type, const char *fmt, ...) {
+inline void 
+yungLog(AnsiiColor_t type, const char *fmt, ...) 
+{
     va_list ap;
     time_t t;
     char datestr[51];
 
     // Determine if we just go to stdout
-    file = (file == NULL) ? stdout : file;
+		FILE* file = (LogFptr == NULL) ? stdout : LogFptr;
+		if(file == NULL) {
+				fprintf(stdout, 
+								"[yungLog] Can't set to stdout or file pointer\n");
+				exit(EXIT_FAILURE);
+		}
 		
-		char color[30];
+		char fmt_type[30];
 		switch(type) {
 				case INFO:
-						strcpy(color, "\033[34m[INFO]"); // Blue
+						if(file == stdout)
+								strcpy(fmt_type, "\033[34m[INFO]"); // Blue
+						else
+								strcpy(fmt_type, "[INFO]");
 						break;
 				case DEBUG:
-						strcpy(color, "\033[35m[DEBUG]"); // Blue
+						if(file == stdout)
+								strcpy(fmt_type, "\033[35m[DEBUG]"); // Cyan
+						else
+								strcpy(fmt_type, "[DEBUG]");
 						break;
 				case TRACE:
-						strcpy(color, "\033[32m[TRACE]"); // Green
+						if(file == stdout)
+								strcpy(fmt_type, "\033[32m[TRACE]"); // Greem
+						else
+								strcpy(fmt_type, "[TRACE]");
 						break;
 				case WARN:
-						strcpy(color, "\033[33m[WARN]"); // Yellow
+						if(file == stdout)
+								strcpy(fmt_type, "\033[33m[WARN]"); // Yellow
+						else
+								strcpy(fmt_type, "[WARN]");
 						break;
 				case ERROR:
-						strcpy(color, "\033[31m[ERROR]"); // Red
+						if(file == stdout)
+								strcpy(fmt_type, "\033[31m[ERROR]"); // Red
+						else
+								strcpy(fmt_type, "[ERROR]");
 						break;
 				case FATAL:
-						strcpy(color, "\033[41m\033[37m[FATAL]"); // White on Red
+						if(file == stdout)
+								strcpy(fmt_type, "\033[41m\033[37m[FATAL]"); // White on Red
+						else
+								strcpy(fmt_type, "[FATAL]");
 						break;
 				default:
-						strcpy(color, "\033[37m[YUNG_LOG]"); // White
+						strcpy(fmt_type, "[YUNG_LOG]"); // White
 		}
 
     // Get current time and format it
     t = time(NULL);
     tzset();
-    strftime(datestr, sizeof(datestr) - 1, "%b %d %T %Y", localtime(&t));
-    fprintf(file, "\x1b[38;5;241m%s %s:%s ", 
-						datestr, color, COLOR_RESET);
+    strftime(datestr, sizeof(datestr) - 1, "%Y/%m/%d %T", localtime(&t));
+		if(file == stdout) 
+				fprintf(file, "\x1b[38;5;241m%s %s:%s ", 
+								datestr, fmt_type, COLOR_RESET);
+		else
+				fprintf(file, "%s %s: ", datestr, fmt_type);
 		
 		// Handle variable arguments
     va_start(ap, fmt);
@@ -70,12 +101,29 @@ inline void yung_log(FILE *file, AnsiiColor_t type, const char *fmt, ...) {
 
     // Move to the next line
     fprintf(file, "\n");
+		fflush(file);
 }
 
-#define logf(f, ...) yung_log(f, NULL, __VA_ARGS__)
-#define log(...)     yung_log(NULL, NULL, __VA_ARGS__)
-#define clogf(f, type, ...) yung_log(f, type, __VA_ARGS__)
-#define clog(type, ...)     yung_log(NULL, type, __VA_ARGS__)
+inline void
+yungLog_create_fp(const char* AppName)
+{
+
+    time_t t;
+    char datestr[51];
+
+		t = time(NULL);
+		tzset();
+    strftime(datestr, sizeof(datestr) - 1, "%Y-%m-%d.log", localtime(&t));
+		int len = sizeof(AppName) + sizeof(datestr);
+		char buf[sizeof(AppName) + sizeof(datestr)];
+		snprintf(buf, len, "%s_%s", AppName, datestr);
+		
+		LogFptr = fopen(buf, "w"); // needs to clean up!
+}
+
+
+#define log(...)     			yungLog(NULL, __VA_ARGS__)
+#define clog(type, ...)   yungLog(type, __VA_ARGS__)
 
 
 /*

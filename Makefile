@@ -9,7 +9,7 @@ all: app echo
 echo: echo.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-app: $(SUPL) main.cpp
+app: $(SUPL) main.cpp include/yungLog.h
 	$(CXX) $(CXXFLAGS) $(LIBS) -o $@ main.cpp $(SUPL) 
 
 output: main.o
