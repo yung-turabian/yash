@@ -9,8 +9,8 @@ Nihilism.
 
 ## Features
 
-. Foreground and background jobs
-. Job processing system
+- Foreground and background jobs
+- Job processing system
 
 ## So Far...
 
