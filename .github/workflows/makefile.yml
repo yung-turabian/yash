@@ -7,14 +7,36 @@ on:
   pull_request:
     branches:
     - trunk
+  schedule:
+  - cron: "0 2 * * 5"
   
 
 jobs:
-  build:
-    name: deploy to staging
-    runs-on:
-    - ubuntu-latest
-    - macos-latest
+  Build-On-Linux:
+    name: Build YaSH on Linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y clang libncurses5-dev libx11-dev
+
+    - name: Build with Makefile
+      run: make all
+
+    - name: Test echo cmd
+      run: ./echo Hello, World!
+
+    - name: Test open/close shell
+      run: |
+        ./app
+        ❌
+
+  Build-On-Mac:
+    name: Build YaSH on Mac
+    runs-on: macos-latest
 
     steps:
     - name: Checkout repository
