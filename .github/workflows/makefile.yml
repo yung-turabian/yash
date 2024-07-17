@@ -43,7 +43,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y clang libncurses5-dev libx11-dev
+      run: sudo brew update && sudo brew install clang ncurses
 
     - name: Build with Makefile
       run: make all
