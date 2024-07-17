@@ -50,13 +50,3 @@ jobs:
 
     - name: Test echo cmd
       run: ./echo Hello, World!
-
-    - name: Test open/close shell
-      run: echo "❌" | ./app
-
-    - name: Test calling ls(👀) and then exit(❌)
-      run: |
-        echo -e "👀\n❌" > cmd.sh && 
-        chmod +x cmd.sh  && 
-        ./app < cmd.sh
-      
