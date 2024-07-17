@@ -1,6 +1,6 @@
-# YaSHY🐚
+# hrry shell 🐚
 
-yashy is an attempt to bring the world of Emojis to the shell.
+hrry is an attempt to bring the world of Emojis to the shell.
 
 
 ## Philosophy
