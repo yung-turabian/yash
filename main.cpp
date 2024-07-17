@@ -316,7 +316,7 @@ execute_command(char* buf)
 
 								//strcat(hist, shell_argv[0]);
 						} 
-						else if(res == EXIT_CALLED_FROM_CMD) {	exit(EXIT_CALLED_FROM_CMD); }
+						else if(res == EXIT_CALLED_FROM_CMD) {	exit(EXIT_SUCCESS); }
 						else {
 								
 						}
