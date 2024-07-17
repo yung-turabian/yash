@@ -32,6 +32,9 @@ jobs:
     - name: Test open/close shell
       run: |
         echo "❌" | ./app 
+    - name: Test open ls(👀) and then exit
+      run : |
+        echo -e "👀\n❌" > cmd.sh && chmod +x cmd.sh  && ./app < cmd.sh
 
   Build-On-Mac:
     name: Build YaSH on Mac
