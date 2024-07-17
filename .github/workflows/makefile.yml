@@ -53,6 +53,7 @@ jobs:
 
     - name: Test open/close shell
       run: |
-        ./app
-        exit
+        ./app <<EOF
+        ❌
+        EOF
       
