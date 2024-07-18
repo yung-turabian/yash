@@ -10,22 +10,26 @@
 #include "YaSH_stdinc.h"
 
 
-int cd(char* argsv[]);
+int cd(int argc, char* argsv[]);
 
-int help(char* argsv[]);
+int help(int argc, char* argsv[]);
 
-int exit(char* argv[]);
+int exit(int argc, char* argv[]);
+
+int echo(int argc, char* argv[]);
 
 static char* builtin_directory[] = {
 		(char*)"cd",
 		(char*)"help",
-		(char*)"exit"
+		(char*)"exit",
+		(char*)"echo",
 };
 
-static int(*builtin_func[]) (char**) = {
+static int(*builtin_func[]) (int, char**) = {
 		&cd,
 		&help,
-		&exit
+		&exit,
+		&echo,
 };
 
 inline int num_builtins() 

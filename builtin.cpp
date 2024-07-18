@@ -1,16 +1,20 @@
 #include "include/builtin.h"
 
-int cd(char* argv[]) 
+int 
+cd(int argc, char* argv[]) 
 {
-		if(argv[1] == NULL) {
-				chdir(getenv("HOME")); // error check
+		if(argv[1] == NULL) 
+		{
+				chdir(getenv("HOME"));
+				perror("chdir");
 		}
-
-		if(strcmp(argv[1], "🆘") == 0) {
+		else if(strcmp(argv[1], "🆘") == 0) 
+		{
 				fprintf(stdout, 
 								"📦 - change the current working directory of YaSH\n");
 		}
-		else {
+		else 
+		{
 				if(chdir(argv[1]) != 0) {
 						fprintf(stderr, "📦: the directory '%s' does not exist \n",
 								argv[1]);		
@@ -19,7 +23,8 @@ int cd(char* argv[])
 		return 1;
 }
 
-int help(char* argv[])
+int 
+help(int argc, char* argv[])
 {
 		if(argv[1] != NULL && strcmp(argv[1], "🆘") == 0) {
 				fprintf(stdout, "🆘 - display documentation for YaSH\n");
@@ -41,7 +46,7 @@ int help(char* argv[])
 		return 1;
 }
 
-int exit(char* argv[])
+int exit(int argc, char* argv[])
 {
 		if(argv[1] != NULL && strcmp(argv[1], "🆘") == 0) {
 				fprintf(stdout, "❌ - exit this instance of YaSH\n");
@@ -49,4 +54,15 @@ int exit(char* argv[])
 		} else {
 				return EXIT_CALLED_FROM_CMD;
 		}
+}
+
+int 
+echo(int argc, char* argv[])
+{
+		int i;
+		for(i=1;i<argc;i++)
+		{
+				fprintf(stdout, "%s ", argv[i]);
+		}
+		fprintf(stdout, "\n");
 }

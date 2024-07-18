@@ -15,9 +15,9 @@ init_shell()
 		
 		struct sigaction sa;
 		
-		clog(INFO, "Shell is interactive: %d", Shell.is_interactive);
-		clog(INFO, "Device name: %s ", Shell.device_name);
-		clog(INFO, "Lines %d\n", Shell.winsize.ws_row);
+		yung_clog(INFO, "Shell is interactive: %d", Shell.is_interactive);
+		yung_clog(INFO, "Device name: %s ", Shell.device_name);
+		yung_clog(INFO, "Lines %d\n", Shell.winsize.ws_row);
 
 		if(Shell.is_interactive) {
 				

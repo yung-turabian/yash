@@ -290,7 +290,7 @@ wait_for_job(job *j)
 void
 format_job_info(job *j, const char* status)
 {
-		clog(DEBUG, "%ld (%s): %s\n", (long)j->pgid, status, j->command);
+		yung_clog(DEBUG, "%ld (%s): %s\n", (long)j->pgid, status, j->command);
 }
 
 void
@@ -312,27 +312,27 @@ free_job(job* j)
 				
 				if(previous_p->argv) {
 				for(i = 0; previous_p->argv[i]; i++) {
-						clog(DEBUG, 
+						yung_clog(DEBUG, 
 								 "Freeing previous_p->argv[%d]: %p", 
 								  i, (void*)previous_p->argv[i]);
 						free(previous_p->argv[i]);
 						previous_p->argv[i] = NULL;
 				}
 
-				clog(DEBUG,
+				yung_clog(DEBUG,
 						 "Freeing previous_p->argv: %p", 
 						 (void*)previous_p->argv);
 				free(previous_p->argv);
 				previous_p = NULL;
 				}
 
-				clog(DEBUG,
+				yung_clog(DEBUG,
 						 "Freeing previous_p: %p", 
 						 (void*)previous_p);
 				free(previous_p);
 				previous_p = NULL;
 		}
-		clog(DEBUG,
+		yung_clog(DEBUG,
 				 "Freeing job: %p", 
 				 (void*)j);
 		free(j);

@@ -32,7 +32,7 @@
 
 
 int
-execute(char* argv[])
+execute(int argc, char **argv)
 {
 		int i;
 
@@ -42,7 +42,7 @@ execute(char* argv[])
 
 		for(i = 0; i < num_builtins(); i++) {
 				if(strcmp(argv[0], builtin_directory[i]) == 0) {
-						return (*builtin_func[i])(argv);
+						return (*builtin_func[i])(argc, argv);
 				}
 		}
 
@@ -50,7 +50,7 @@ execute(char* argv[])
 }
 
 job*
-call(char *argv[])
+call(int argc, char **argv)
 {
 		job* j = NULL;
 		process *p;
@@ -236,7 +236,8 @@ handle_input(char* buf, u8 *buf_len)
 								if(*buf_len > 0) buf[--(*buf_len)] = '\0';
 								break;
 						case 22: //CTRL-V, pretty sloppy
-								emoji = getX11Clipboard();
+								//emoji = getX11Clipboard();
+								//emoji = getClipboardContents();
 								strcat(buf, (const char*) emoji);
 								fprintf(stdout, "%s", emoji);
 								fflush(stdout);
@@ -279,6 +280,9 @@ handle_input(char* buf, u8 *buf_len)
 		} while(c != EOF && !(breakout));
 }
 
+#define MAX_NUMBER_ARGS 4096
+#define MAX_ARG_SIZE 100
+
 void
 execute_command(char* buf)
 {
@@ -286,33 +290,29 @@ execute_command(char* buf)
 		if(buf[0] != '\0') {
 				currentLine = tok(buf, " ");
 
-				char* shell_argv[3]; // Needs to be null-terminated
-				
+				char *shell_argv[MAX_NUMBER_ARGS]; 
+				// Needs to be null-terminated
+
+				int argc;		
+
 				link(currentLine->tokens, currentLine->argc);
 
-				char* cmd = currentLine->tokens[0];
-				
-				char* arg;
-				if(currentLine->argc > 1) {
-						arg = currentLine->tokens[1];
-				} else {
-						arg = NULL;
-				}
-				shell_argv[1] = arg;
-				shell_argv[2] = NULL;
-				
+				shell_argv[0] = currentLine->tokens[0];
 
-				// local command
-				shell_argv[0] = cmd;
-				
+				for(argc=1;argc < currentLine->argc;argc++)
+						shell_argv[argc] = currentLine->tokens[argc];
+
+
+				shell_argv[argc] = NULL;
+
 				fprintf(stdout, "\n");
 
 				// This is really bad!
-				if(cmd != NULL) {
-						int res = execute(shell_argv);
+				if(shell_argv[0] != NULL) {
+						int res = execute(argc, shell_argv);
 						if(res == -1) {
 
-								call(shell_argv);
+								call(argc, shell_argv);
 
 								//strcat(hist, shell_argv[0]);
 						} 

@@ -122,8 +122,8 @@ yungLog_create_fp(const char* AppName)
 }
 
 
-#define log(...)     			yungLog(NULL, __VA_ARGS__)
-#define clog(type, ...)   yungLog(type, __VA_ARGS__)
+#define yung_log(...)     			yungLog(NULL, __VA_ARGS__)
+#define yung_clog(type, ...)   yungLog(type, __VA_ARGS__)
 
 
 /*
