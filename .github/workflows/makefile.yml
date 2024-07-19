@@ -28,10 +28,10 @@ jobs:
 
     - name: Test open/close shell
       run: |
-        echo "❌" | ./app 
+        echo "❌" | ./hrry 
     - name: Test open ls(👀) and then exit
       run : |
-        echo -e "👀\n❌" > cmd.sh && chmod +x cmd.sh  && ./app < cmd.sh
+        echo -e "👀\n❌" > cmd.sh && chmod +x cmd.sh  && ./hrry < cmd.sh
 
   Build-On-Mac:
     name: Build YaSH on Mac
@@ -46,6 +46,11 @@ jobs:
 
     - name: Build with Makefile
       run: make all
-
-    - name: Test echo cmd
-      run: ./echo Hello, World!
+      
+    - name: Test open/close shell
+      run: |
+        echo "❌" | ./hrry 
+  
+    - name: Test open ls(👀) and then exit
+      run : |
+        echo -e "👀\n❌" > cmd.sh && chmod +x cmd.sh  && ./hrry < cmd.sh
