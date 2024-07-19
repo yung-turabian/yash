@@ -1,15 +1,15 @@
 // Components
-#include "include/hrry_stdinc.h"
-#include "include/builtin.h"
-#include "include/shell.h"
-#include "include/jobs.h"
+#include "../include/hrry_stdinc.h"
+#include "../include/builtin.h"
+#include "../include/shell.h"
+#include "../include/jobs.h"
 
 #ifdef _WIN32
 		
 #elif __APPLE__
 		
 #elif __linux__
-		#include "include/YaSH_x11.h"
+		#include "../include/linux/hrry_x11.h"
 #endif
 
 #define MAX_TOKENS 6
@@ -106,7 +106,7 @@ runFile(const char * path)
 
 void execute_command(char* buf);
 
-#include "io.cpp"
+#include "../include/io.h"
 
 const char* YASH_ECHO = (const char*)"💬";
 
@@ -123,7 +123,6 @@ runPrompt()
 		buf[0] = '\0';
 		//hist = (char**)malloc((sizeof(char) * 4096) * 10);
 		buf_len = 0;
-		hist_len = 0;
 
 		// FIX THIS PLEAS!!!
 		for(;;)
@@ -242,7 +241,7 @@ getCursorPosition(int* rows, int* cols)
     }
 }
 
-#include "linker.cpp"
+#include "../include/linker.h"
 
 #define MAX_NUMBER_ARGS 4096
 #define MAX_ARG_SIZE 100

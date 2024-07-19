@@ -1,5 +1,5 @@
-#include "include/shell.h"
-#include "include/jobs.h"
+#include "../include/shell.h"
+#include "../include/jobs.h"
 
 void signal_handler(int sig);
 

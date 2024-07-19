@@ -1,4 +1,4 @@
-#include "include/YaSH_x11.h"
+#include "../include/linux/hrry_x11.h"
 
 void
 show_utf8_prop(Display* dpy, Window w, Atom p)

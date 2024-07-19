@@ -1,3 +1,4 @@
+#include "../include/linker.h"
 
 // Bad code, please fix
 void 

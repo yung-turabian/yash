@@ -1,5 +1,5 @@
-#include "include/hrry_stdinc.h"
-#include "include/token.h"
+#include "../include/hrry_stdinc.h"
+#include "../include/token.h"
 
 #include <list>
 using namespace std;

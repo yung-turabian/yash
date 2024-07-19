@@ -1,4 +1,4 @@
-#include "include/token.h"
+#include "../include/token.h"
 
 Token* 
 createToken(TokenType type, const char * lexeme, int line)

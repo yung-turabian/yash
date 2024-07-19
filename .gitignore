@@ -3,6 +3,7 @@
 *.log
 # the exec
 hrry
+build/
 
 ### C ###
 # Prerequisites

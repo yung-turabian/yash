@@ -1,8 +1,11 @@
-const char* hist[40];
-int hist_len;
-int curr_hist_sel = 0;
+#include "../include/io.h"
 
-bool editing_line = false;
+// Fix this
+static const char* hist[40];
+static int hist_len;
+static int curr_hist_sel = 0;
+
+static bool editing_line = false;
 
 void
 handle_input(char* buf, u8 *buf_len)

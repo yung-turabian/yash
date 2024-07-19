@@ -1,6 +1,6 @@
-#ifndef YASH_X11_H
-#define YASH_X11_H
-#include "YaSH_stdinc.h"
+#ifndef HRRY_X11_H
+#define HRRY_X11_H
+#include "hrry_stdinc.h"
 #include <X11/Xlib.h> //linx clipboard exposure
 
 // WIP
