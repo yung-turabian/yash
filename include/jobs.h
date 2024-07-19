@@ -1,6 +1,6 @@
 #ifndef YASH_JOBS_H
 #define YASH_JOBS_H
-#include "YaSH_stdinc.h"
+#include "hrry_stdinc.h"
 
 
 inline job *first_job = NULL;

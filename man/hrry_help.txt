@@ -1,0 +1,20 @@
+[5mhrry - the emoji shell[0m
+
+[1;4mUSAGE[0m
+
+[1mhrry[0m [args]
+
+[1;4mABOUT[0m
+
+[1mhrry[0m is a command-line shell intented for simplicity with emoji syntax to smooth the learning curve.
+
+
+
+[1;4mAvailable options:[0m
+
+[1m-h[0m or [1m--help[0m
+		Brings up this menu.
+
+[1m-v[0m or [1m--version[0m
+		Print the version and exit the program.
+

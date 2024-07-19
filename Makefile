@@ -6,9 +6,15 @@ SUPL=util.cpp builtin.cpp shell.cpp jobs.cpp YaSH_x11.cpp
 
 all: hrry 
 
-hrry: $(SUPL) main.cpp include/yungLog.h
-	$(CXX) $(CXXFLAGS) $(LINUX_LIBS) -o $@ main.cpp $(SUPL) 
+hrry: $(SUPL) hrry.cpp include/yungLog.h
+	$(CXX) $(CXXFLAGS) $(LINUX_LIBS) -o $@ hrry.cpp $(SUPL)
+
+Scanner: playground.cpp scanner.cpp
+	$(CXX) $(CXXFLAGS) -o $@ playground.cpp scanner.cpp
+
+Tokenizer: playground.cpp tokenizer.cpp
+	$(CXX) $(CXXFLAGS) -o $@ playground.cpp tokenizer.cpp
 
 .PHONY: clean
 clean:
-	rm *.o output app echo
+	rm *.o hrry Tokenizer Parser

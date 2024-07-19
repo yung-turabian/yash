@@ -1,5 +1,5 @@
 /**
- *	\file YaSH_stdinc.h
+ *	\file hrry_stdinc.h
  *
  *	General header that includes C/Unix/C++ language
  */
@@ -7,7 +7,7 @@
 #ifndef YASH_BUILTIN_H
 #define YASH_BUILTIN_H
 
-#include "YaSH_stdinc.h"
+#include "hrry_stdinc.h"
 
 
 int cd(int argc, char* argsv[]);

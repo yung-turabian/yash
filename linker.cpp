@@ -1,5 +1,4 @@
 
-
 // Bad code, please fix
 void 
 link(char** tokens, int n)
@@ -43,6 +42,9 @@ link(char** tokens, int n)
 				else if(strcmp(tokens[i], "❌") == 0) {
 						tokens[i] = (char*)"exit";	
 				}
-		}
+				else if(strcmp(tokens[i], "🟰") == 0) {
+						tokens[i] = (char*)"=";	
+				}
+		} // ls --color=auto
 
 }

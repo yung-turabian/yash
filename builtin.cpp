@@ -3,12 +3,11 @@
 int 
 cd(int argc, char* argv[]) 
 {
-		if(argv[1] == NULL) 
+		if(argc == 1) 
 		{
 				chdir(getenv("HOME"));
-				perror("chdir");
 		}
-		else if(strcmp(argv[1], "🆘") == 0) 
+		else if(strcmp(argv[1], "--help") == 0) 
 		{
 				fprintf(stdout, 
 								"📦 - change the current working directory of YaSH\n");
@@ -26,7 +25,7 @@ cd(int argc, char* argv[])
 int 
 help(int argc, char* argv[])
 {
-		if(argv[1] != NULL && strcmp(argv[1], "🆘") == 0) {
+		if(argc > 1 && strcmp(argv[1], "--help") == 0) {
 				fprintf(stdout, "🆘 - display documentation for YaSH\n");
 		} 
 		else {
@@ -48,7 +47,7 @@ help(int argc, char* argv[])
 
 int exit(int argc, char* argv[])
 {
-		if(argv[1] != NULL && strcmp(argv[1], "🆘") == 0) {
+		if(argc > 1 && strcmp(argv[1], "--help") == 0) {
 				fprintf(stdout, "❌ - exit this instance of YaSH\n");
 				return 1;
 		} else {

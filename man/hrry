@@ -1,0 +1,25 @@
+.\" Manpage for hrry-shell.
+.\" Contact henrywandover@gmail.com to correct errors or typos.
+.TH HRRY 1 "19 7 2024" "0.1.0" "hrry-shell man page"
+.SH NAME
+hrry \- an emoji syntactic shell & scripting language.
+.SH SYNOPSIS
+hrry [ARGS]
+.SH DESCRIPTION
+hrry is a command-line shell intented for simplicity with emoji syntax to smooth the learning curve.
+.SH OPTIONS
+
+.BR \-h " or " \-\-help
+
+.BR
+		Brings up this menu.
+
+.BR \-v " or " \-\-version
+
+.BR
+		Print the version and exit the program.
+
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+yung-turabian (henrywandover@gmail.com)
