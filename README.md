@@ -46,4 +46,4 @@ Nihilism.
 
 ## Here's a shell :0
 
-<img src="shell.png" width="200" height="200">
+<img src="assets/shell.png" width="200" height="200">
