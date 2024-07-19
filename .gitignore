@@ -1,6 +1,8 @@
 ### Custom ###
 # log files
 *.log
+# the exec
+hrry
 
 ### C ###
 # Prerequisites
