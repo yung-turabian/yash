@@ -1,3 +1,5 @@
+#ifdef __linux__
+// pretty dumb ^
 #include "../include/linux/hrry_x11.h"
 
 void
@@ -193,3 +195,4 @@ getX11Clipboard()
         }
     }
 }
+#endif
