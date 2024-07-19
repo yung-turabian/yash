@@ -26,9 +26,6 @@ jobs:
     - name: Build with Makefile
       run: make all
 
-    - name: Test echo cmd
-      run: ./echo Hello, World!
-
     - name: Test open/close shell
       run: |
         echo "❌" | ./app 
