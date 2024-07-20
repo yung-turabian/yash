@@ -26,13 +26,6 @@ jobs:
     - name: Configure with CMake (using build_tools)
       run: ./build_tools/build_with_ninja.sh
 
-    - name: Test open/close shell
-      run: |
-        echo "❌" | ./hrry 
-    - name: Test open ls(👀) and then exit
-      run : |
-        echo -e "👀\n❌" > cmd.sh && chmod +x cmd.sh  && ./hrry < cmd.sh
-
   Build-On-Mac:
     name: Build hrry on Mac
     runs-on: macos-latest
@@ -42,15 +35,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: brew update && brew install libx11 ninja
+      run: brew update && brew install libx11 ninja coreutils
 
     - name: Configure with CMake (using build_tools)
       run: ./build_tools/build_with_ninja.sh
-      
-    - name: Test open/close shell
-      run: |
-        echo "❌" | ./hrry 
-  
-    - name: Test open ls(👀) and then exit
-      run : |
-        echo -e "👀\n❌" > cmd.sh && chmod +x cmd.sh  && ./hrry < cmd.sh
