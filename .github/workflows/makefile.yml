@@ -24,7 +24,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y clang libx11-dev ninja-build
 
     - name: Configure with CMake (using build_tools)
-      run: ./build_tools/build_with_ninja.sh build
+      run: ./build_tools/build_with_ninja.sh
 
     - name: Test open/close shell
       run: |
@@ -45,7 +45,7 @@ jobs:
       run: brew update && brew install libx11 ninja
 
     - name: Configure with CMake (using build_tools)
-      run: ./build_tools/build_with_ninja.sh build
+      run: ./build_tools/build_with_ninja.sh
       
     - name: Test open/close shell
       run: |
