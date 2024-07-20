@@ -2,6 +2,11 @@
 
 hrry is an attempt to bring the world of Emojis to the shell.
 
+     -----------------------------/ ^^^^^^^ \
+   /                             |  | * * |  |
+  / |   )                   |  ||\__/  @  \__/
+\/   \ / /----------\______/ \ //     '-'
+      ||=|=                   ||=|=
 
 ## Philosophy
 
@@ -43,7 +48,3 @@ Nihilism.
 ### Options
 
 - 🆘 - --help
-
-## Here's a shell :0
-
-<img src="assets/shell.png" width="200" height="200">
