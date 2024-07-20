@@ -1,8 +1,7 @@
-#ifndef YUNGLOG_H
-#define YUNGLOG_H
+#ifndef YUNGLOG_VERSION
+#define YUNGLOG_VERSION 0x0001000C
 
 #ifdef __cplusplus
-#include <cstdlib>
 #include <vector>
 extern "C" {
 #endif

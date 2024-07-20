@@ -46,6 +46,19 @@ link(char** tokens, int n)
 				else if(strcmp(tokens[i], "🟰") == 0) {
 						tokens[i] = (char*)"=";	
 				}
-		} // ls --color=auto
+				
+				// rudimentary
+				else {
+						if(tokens[i][0] == '$') {
+								memmove(tokens[i], (tokens[i])+1, strlen(tokens[i])); //chopped
+								char* env_var = getenv(tokens[i]);
+								if(env_var != NULL)
+										strcpy(tokens[i], env_var);
+								else
+										tokens[i][0] = '\0';
+						}
+				}
+
+		}
 
 }

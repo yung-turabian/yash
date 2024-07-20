@@ -159,8 +159,10 @@ void
 free_tokens(char** tokens, u8 count)
 {
 		u8 i;
-		for(i=0;i<count;i++)
-				free(tokens[i]);
+		for(i=0;i<count;i++) {
+				if(tokens[i] != NULL)
+						free(tokens[i]);
+		}
 
 		free(tokens);
 }
@@ -240,7 +242,7 @@ tok(char* str, const char* del, char*** tokens, u8* count)
 		}
 
 		*tokens = (char**)malloc(MAX_TOKENS * (MAX_STRING + 1));
-		if(tokens == NULL) {
+		if((*tokens) == NULL) {
 				yung_clog(ERROR, "Tokenizer failed to allocate for provided token buffer.");
 				return;
 		} 
@@ -251,6 +253,7 @@ tok(char* str, const char* del, char*** tokens, u8* count)
 						yung_clog(ERROR, "Tokenizer failed to allocate for a token.");
 						
 						free_tokens(*tokens, *count);
+						*tokens = NULL;
 						yung_clog(INFO, 
 										"Freed token buffers and all tokens (including shitty ones).");
 						return;
@@ -352,11 +355,20 @@ main(int argc, char* argv[])
 						runStd = true;
 				}
 		}
+		
+		// Complete this
+		if(strcmp(getenv("TERM"), "xterm-256color") != 0) {
+				fprintf(stderr, "Could not setup terminal.\n");
+				fprintf(stderr, "warning: TERM environment variable set to ' '.\n");
 
+				fprintf(stderr, "Check that this terminal type is supported on this system..\n");
+				fprintf(stderr, "Using fallback terminal type 'xterm-256color'.\n");
 
-		if (setenv("TERM", "xterm-256color", 1) != 0) {
-        fprintf(stderr, "Wasn't able to set TERM variable\n");
-    }
+				if (setenv("TERM", "xterm-256color", 1) != 0) {
+						fprintf(stderr, "Wasn't able to set TERM variable\n");
+				}
+		}
+
 
 		yungLog_fopen("hrry");
 

@@ -22,11 +22,15 @@ fi
 CURR_DIR=$(pwd)
 
 if [ -f $CURR_DIR/CMakePresets.json ]; then
-    echo "CMakePresets.json found in '$CURR_DIR'."
+		
+		# clear screen w/o reseting TERM
+		echo -e "\033[2J\033[H"
+		printf "\033[2J\033[H"
 
+    echo "CMakePresets.json found in '$CURR_DIR'."
+		
 		PRESETS_DIR=$CURR_DIR
 
-		clear
 
 		echo "Starting build..."
 		start_time=$(date +%s%3N)

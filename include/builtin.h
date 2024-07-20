@@ -16,20 +16,20 @@ int help(int argc, char* argsv[]);
 
 int exit(int argc, char* argv[]);
 
-int echo(int argc, char* argv[]);
+//int echo(int argc, char* argv[]);
 
 static char* builtin_directory[] = {
 		(char*)"cd",
 		(char*)"help",
 		(char*)"exit",
-		(char*)"echo",
+		//(char*)"echo",
 };
 
 static int(*builtin_func[]) (int, char**) = {
 		&cd,
 		&help,
 		&exit,
-		&echo,
+		//&echo,
 };
 
 inline int num_builtins() 

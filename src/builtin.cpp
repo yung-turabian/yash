@@ -55,6 +55,7 @@ int exit(int argc, char* argv[])
 		}
 }
 
+/*
 int 
 echo(int argc, char* argv[])
 {
@@ -64,4 +65,4 @@ echo(int argc, char* argv[])
 				fprintf(stdout, "%s ", argv[i]);
 		}
 		fprintf(stdout, "\n");
-}
+}*/
