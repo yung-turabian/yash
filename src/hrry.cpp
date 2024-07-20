@@ -353,14 +353,14 @@ main(int argc, char* argv[])
 				}
 		}
 
+
+
+		if (setenv("TERM", "xterm-256color", 1) != 0) {
+        return 1;
+    }
+
+
 		yungLog_fopen("hrry");
-
-
-		//if (setenv("TERM", "xterm-256color", 1) != 0) {
-    //    return 1;
-    //}
-
-
 		init_shell();
 		/*
     pthread_t notif_thread;
