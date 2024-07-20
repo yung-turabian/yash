@@ -189,7 +189,6 @@ runPrompt()
 		currentLine->tokens = NULL;
 		currentLine->argc = 0;
 
-		// FIX THIS PLEASE!!!
 		for(;;)
 		{
 				if (shouldExit)
@@ -197,14 +196,21 @@ runPrompt()
 
 				currentLine->buf_len = 0;
 				currentLine->buf[0] = '\0';
-				fprintf(stdout, "🐚 %c7", ESC);
+
+				if(isatty(Shell.terminal)) // Only run if in interactive mode, not testing
+						fprintf(stdout, "🐚 %c7", ESC);
+
 				handle_input(currentLine->buf, &currentLine->buf_len);
 
 				if(currentLine->buf[0] != '\0') {
 						execute_command(currentLine);
 				} else {
-						fprintf(stdout, "\n"); //no input
+						if(isatty(Shell.terminal))
+								fprintf(stdout, "\n"); //no input
 				}
+
+				if(feof(stdin))
+						break; //exit loop if EOF is reached
 		}
 
 		// on exit

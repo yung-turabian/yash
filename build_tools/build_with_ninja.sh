@@ -1,9 +1,61 @@
 #!/bin/bash
 
-set -e
+usage () {
+  echo "Usage:"
+  echo "   build_with_ninja [options]"
+  echo ""
+  echo "OPTIONS"
+  echo "  -h | --help                 this help"
+  echo "  -c | --clear                clears the screen"
+  echo "  -t | --type                 change compile type, defaults to debug"
+  exit 1
+}
+COMPILE_TYPE="debug"
+CLEAN=${false}
 
-COMPILE_TYPE=${1:-'debug'} # defaults
-CLEAN=${2:false}
+
+DEFAULT_OPTIONS=0
+
+
+if [ "$OPTIONS" != "" ] ; then
+		set -- $OPTIONS "@@" "$@"
+		DEFAULT_OPTIONS=1
+fi
+
+while [ "$#" -gt 0 ] ; do
+		case $1 in
+		
+		-h | --help) 
+				usage ;;
+
+		-c | --clear)
+				shift
+				# clear screen w/o reseting TERM
+				echo -e "\033[2J\033[H" &&
+				printf "\033[2J\033[H"
+				shift ;;
+
+		-t | --type)
+				shift
+				if [ "$#" -eq 0 ]; then echo "ERROR: Missig compile type"; usage ; fi
+				COMPILE_TYPE=${1}
+				shift ;;
+
+		-cls | --clean)
+				shift
+				if [ "$#" -eq 0 ]; then echo "ERROR: Missing bool"; usage ; fi
+				CLEAN=${1}
+				shift ;;
+
+		@@)
+				DEFAULT_OPTIONS=0
+				shift
+				;;
+
+		--* | -*) echo "Invalid option $1"; usage ;;
+
+		esac
+done
 
 #if [ -z "$BUILD_DIR" ]; then
 #    echo "Usage: $0 <path-to-build-directory>"
@@ -22,10 +74,7 @@ fi
 CURR_DIR=$(pwd)
 
 if [ -f $CURR_DIR/CMakePresets.json ]; then
-		
-		# clear screen w/o reseting TERM
-		echo -e "\033[2J\033[H"
-		printf "\033[2J\033[H"
+
 
     echo "CMakePresets.json found in '$CURR_DIR'."
 		
@@ -33,14 +82,29 @@ if [ -f $CURR_DIR/CMakePresets.json ]; then
 
 
 		echo "Starting build..."
-		start_time=$(date +%s%3N)
+		if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+				start_time=$(date +%s%3N)
+		elif [[ "$OSTYPE" == "darwin"* ]]; then
+				start_time=$(gdate +%s%3N)
+		else
+				SECONDS=0
+				start_time=SECONDS
+		fi
+
 		cmake -S . -B ./build/ -G Ninja --preset "${COMPILE_TYPE}" &&
 		cmake --build build/
-		end_time=$(date +%s%3N)
 
-		elapsed_seconds=$(((end_time - start_time) / 1000))
-		elapsed_ms=$(((end_time - start_time) % 1000))
-		echo "Build completed: $elapsed_seconds.$elapsed_ms ms"
+		if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+				end_time=$(date +%s%3N)
+		elif [[ "$OSTYPE" == "darwin"* ]]; then
+				end_time=$(gdate +%s%3N)
+		else
+				end_time=SECONDS
+		fi
+
+		duration_ms=$((end_time - start_time))
+
+		echo "Build completed: $duration_ms ms"
 
 		mv ./build/hrry $CURR_DIR
 else 

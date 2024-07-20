@@ -1,9 +1,11 @@
 ### Custom ###
 # log files
 *.log
-# the exec
+# execs
 hrry
+test_runner
 build/
+
 
 ### C ###
 # Prerequisites
