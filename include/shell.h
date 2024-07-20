@@ -5,5 +5,4 @@
 void init_shell();
 void reset_terminal();
 
-
 #endif

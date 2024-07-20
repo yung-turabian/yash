@@ -11,7 +11,7 @@ void
 handle_input(char* buf, u8 *buf_len)
 {
 		bool breakout = false;
-		unsigned char* emoji;
+		//unsigned char* emoji;
 		// pretty shit, rework
 		char c;
 		do {
@@ -33,7 +33,7 @@ handle_input(char* buf, u8 *buf_len)
 								breakout = true;
 								editing_line = false;
 								if(strlen(buf) != 0) {
-										hist[hist_len++] = strdup(buf);
+										hist[hist_len++] = buf;
 										hist[hist_len] = "";
 										curr_hist_sel++;
 								}
@@ -50,10 +50,10 @@ handle_input(char* buf, u8 *buf_len)
 						case 22: //CTRL-V, pretty sloppy
 								//emoji = getX11Clipboard();
 								//emoji = getClipboardContents();
-								strcat(buf, (const char*) emoji);
-								fprintf(stdout, "%s", emoji);
+								//strcat(buf, (const char*) emoji);
+								//fprintf(stdout, "%s", emoji);
 								//fflush(stdout);
-								*buf_len += strlen((const char*)emoji);
+								//*buf_len += strlen((const char*)emoji);
 								break;
 						/*case 'e':
 								//debug, kinda janky
@@ -76,10 +76,11 @@ handle_input(char* buf, u8 *buf_len)
 										break;
 
 										case 'B':
-										if(!editing_line && curr_hist_sel >= 0 && curr_hist_sel < hist_len)
+										if(!editing_line && curr_hist_sel >= 0 && curr_hist_sel < hist_len) {
 												strcpy(buf, hist[++curr_hist_sel]);
 												*buf_len = strlen(hist[curr_hist_sel]);
 												editing_line = false;
+										}
 										break;
 								}
 								break;

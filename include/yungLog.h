@@ -2,6 +2,8 @@
 #define YUNGLOG_H
 
 #ifdef __cplusplus
+#include <cstdlib>
+#include <vector>
 extern "C" {
 #endif
 
@@ -24,7 +26,11 @@ typedef enum AnsiiColor_t {
 		FATAL
 } AnsiiColor_t;
 
+#ifdef __cplusplus
 inline FILE *LogFptr;
+#else
+FILE *LogFptr;
+#endif
 
 /** Logs a line of text */
 inline void 
@@ -105,82 +111,53 @@ yungLog(AnsiiColor_t type, const char *fmt, ...)
 }
 
 inline void
-yungLog_create_fp(const char* AppName)
+yungLog_fopen(const char* AppName)
 {
-
     time_t t;
     char datestr[51];
 
 		t = time(NULL);
 		tzset();
     strftime(datestr, sizeof(datestr) - 1, "%Y-%m-%d.log", localtime(&t));
-		int len = sizeof(AppName) + sizeof(datestr);
-		char buf[sizeof(AppName) + sizeof(datestr)];
+
+		size_t len = strlen(AppName) + strlen(datestr) + 2;
+#ifdef __cplusplus
+		std::vector<char> buf(len);
+		snprintf(buf.data(), len, "%s_%s", AppName, datestr);
+
+		LogFptr = fopen(buf.data(), "w");
+		if(LogFptr == NULL) {
+				fprintf(stderr, "[yungLog++] Failure to open file pointer\n");
+				exit(EXIT_FAILURE);
+		}
+#else
+		char buf[len];
 		snprintf(buf, len, "%s_%s", AppName, datestr);
-		
-		LogFptr = fopen(buf, "w"); // needs to clean up!
+
+		LogFptr = fopen(buf, "w");
+		if(LogFptr == NULL) {
+				fprintf(stderr, "[yungLog] Failure to open file pointer\n");
+				exit(EXIT_FAILURE);
+		}
+#endif
 }
 
 
 #define yung_log(...)     			yungLog(NULL, __VA_ARGS__)
-#define yung_clog(type, ...)   yungLog(type, __VA_ARGS__)
+#define yung_clog(type, ...)    yungLog(type, __VA_ARGS__)
 
 
-/*
-// Logging levels
-inline void log_trace(const char *fmt, ...) {
-    printf(COLOR_TRACE "[TRACE] ");
-    va_list args;
-    va_start(args, fmt);
-    yung_log(NULL, fmt, args);
-    va_end(args);
-    printf(COLOR_RESET);
+inline void
+yungLog_fclose()
+{
+		if(LogFptr != NULL) {
+				fclose(LogFptr);
+				LogFptr = NULL;
+		}
+		else
+				fprintf(stderr, 
+								"[yungLog] Blocked an attempt to close an unopened file pointer\n");
 }
-
-inline void log_debug(const char *fmt, ...) {
-    printf(COLOR_DEBUG "[DEBUG] ");
-    va_list args;
-    va_start(args, fmt);
-    yung_log(NULL, fmt, args);
-    va_end(args);
-    printf(COLOR_RESET);
-}
-
-inline void log_info(const char *fmt, ...) {
-    printf(COLOR_INFO "[INFO] ");
-    va_list args;
-    va_start(args, fmt);
-    yung_log(NULL, fmt, args);
-    va_end(args);
-    printf(COLOR_RESET);
-}
-
-inline void log_warn(const char *fmt, ...) {
-    printf(COLOR_WARN "[WARN] ");
-    va_list args;
-    va_start(args, fmt);
-    yung_log(NULL, fmt, args);
-    va_end(args);
-    printf(COLOR_RESET);
-}
-
-inline void log_error(const char *fmt, ...) {
-    printf(COLOR_ERROR "[ERROR] ");
-    va_list args;
-    va_start(args, fmt);
-    yung_log(NULL, fmt, args);
-    va_end(args);
-    printf(COLOR_RESET);
-}
-
-inline void log_fatal(const char *fmt, ...) {
-    printf(COLOR_FATAL "[FATAL] ");
-    va_list args;
-    va_start(args, fmt);
-    yung_log(NULL, fmt, args);
-    va_end(args);
-    printf(COLOR_RESET);
-}*/
 
 #ifdef __cplusplus
 }

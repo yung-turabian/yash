@@ -1,7 +1,7 @@
 #include "../include/shell.h"
 #include "../include/jobs.h"
 
-void signal_handler(int sig);
+static void signal_handler(int signum, siginfo_t *sip, void *context);
 
 void
 init_shell()
@@ -13,11 +13,9 @@ init_shell()
 		Shell.device_name = ttyname(Shell.terminal);
 		ioctl(0, TIOCGWINSZ, &Shell.winsize); // get terminal size
 		
-		struct sigaction sa;
-		
 		yung_clog(INFO, "Shell is interactive: %d", Shell.is_interactive);
 		yung_clog(INFO, "Device name: %s ", Shell.device_name);
-		yung_clog(INFO, "Lines %d\n", Shell.winsize.ws_row);
+		yung_clog(INFO, "Lines %d", Shell.winsize.ws_row);
 
 		if(Shell.is_interactive) {
 				
@@ -32,22 +30,26 @@ init_shell()
 				signal (SIGTTIN, SIG_IGN);
 				signal (SIGTTOU, SIG_IGN);
 
-				sa.sa_handler = signal_handler;
+				struct sigaction sa;
+		
+				sa.sa_sigaction = signal_handler;
 				sigemptyset(&sa.sa_mask);
-				sa.sa_flags = SA_RESTART;
+				sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
-				sigaction(SIGCHLD, &sa, NULL);
-				// VERASE ^H or ^?
-				// VSTOP AND VSTART, ^S and ^Q
+				if(sigaction(SIGCHLD, &sa, (struct sigaction *)NULL) == -1) {
+						yung_clog(ERROR, 
+										"Sigaction failure: couldn't init SIGCHLD link to signal_handler");
+				}
+
 
 				// put shell in own process group
 				Shell.pgid = getpid();
 				if(setpgid(Shell.pgid, Shell.pgid) < 0) {
-						fprintf(stderr, 
-										"[yash🐚] Couldn't put shell in it's own process group, ask Henry\n");
+						yung_clog(FATAL, 
+										"Couldn't put shell in it's own process group.");
 						exit(EXIT_FAILURE);
 				}
-				//
+				
 				// grab control of term
 				tcsetpgrp(Shell.terminal, Shell.pgid);
 				// save default term attribs for shell
@@ -72,38 +74,60 @@ init_shell()
 								|| cfsetospeed(&Shell.tmodes, B9600) < 0){ }
 				
 				if(tcsetattr(Shell.terminal, TCSANOW, &Shell.tmodes) < 0) { }
-
-				//printf("\e[?25l"); // hides cursor
-				atexit(reset_terminal);
 		}
+}
 
-
-
+/*	EXITED = 1, KILLED, DUMPED, TRAPPED, STOPPED, CONTINUED
+ *	
+ *
+ */
+static void 
+signal_handler(int signum, siginfo_t *sip, void *context)
+{
+    switch (signum) {
+        case SIGCHLD: //sent to parent when child stops
+						yung_clog(DEBUG, 
+										"SIGCHLD %d emmitted for process: %d; exited with code: %d; status: %d",
+										sip->si_signo, sip->si_pid, sip->si_code, sip->si_status);
+						do_job_notification();
+						break;
+				case SIGCONT:
+						do_job_notification(); // might have to fix
+						break;
+    }
 }
 
 void
 reset_terminal()
 {
-		printf("\em"); //reset color changes
+		printf("%cm", ESC); //reset color changes
 		fflush(stdout);
 		tcsetattr(Shell.terminal, TCSANOW, &Shell.ORIGINAL_TMODES);
 }
 
+void
+hide_cursor() {printf("%c[?25l", ESC);}
 
-void 
-signal_handler(int sig) {
-    switch (sig) {
-        case SIGCHLD: //sent to parent when child stops
-						do_job_notification();
-            break;
-        case SIGINT:
-        case SIGTSTP:
+#include <term.h>
+void
+getCursorPosition(int* rows, int* cols)
+{
+		char buf[32];
+		u8 i = 0;
 
-            do_job_notification();
-            break;
-				case SIGCONT:
+		write(STDOUT_FILENO, "\x1b[6n", 4);
 
-            do_job_notification();
-						break;
+
+    // Read the response
+    while (i < sizeof(buf) - 1) {
+        if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
+        if (buf[i] == 'R') break;
+        i++;
+    }
+    buf[i] = '\0';
+
+    // Parse the response
+    if (buf[0] == '\x1b' && buf[1] == '[') {
+        sscanf(&buf[2], "%d;%d", rows, cols);
     }
 }

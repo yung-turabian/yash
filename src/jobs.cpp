@@ -1,4 +1,3 @@
-
 #include "../include/jobs.h"
 
 
@@ -98,9 +97,8 @@ launch_process(process *p, pid_t pgid,
 
 		// exec new process
 		execvp(p->argv[0], p->argv); // this will take int account PATH var
-		fprintf(stderr, "[YaSH🐚] Unknow command: %s\n", p->argv[0]);
+		fprintf(stderr, "🐚] Unknown command: %s\n", p->argv[0]);
 		exit(EXIT_FAILURE);
-
 }
 
 void
@@ -123,6 +121,7 @@ launch_job(job *j, bool foreground)
 				}
 				else
 						outfile = j->stdout;
+
 				
 				//check for builtin commands
 
@@ -155,6 +154,7 @@ launch_job(job *j, bool foreground)
 		}
 
 		format_job_info(j, "launched");
+
 
 		if(!Shell.is_interactive)
 				wait_for_job(j);
@@ -236,10 +236,13 @@ mark_process_status(pid_t pid, int status)
 						for(p=j->first_process; p; p=p->next) 
 								if(p->pid == pid) {
 										p->status = status;
-										if(WIFSTOPPED(status))
+										if(WIFSTOPPED(status)) {
 												p->stopped = true;
+												format_job_info(j, "process stopped");
+										}
 										else {
 												p->completed = true;
+												format_job_info(j, "process completed");
 												if(WIFSIGNALED(status)) 
 														fprintf(stderr, "%d: Terminated by signal %d. \n",
 																		(int) pid, WTERMSIG(p->status));
@@ -299,42 +302,39 @@ free_job(job* j)
 		if (!j) return;
 
 		process *p;
-		process *previous_p;
+		process *next_p;
 
 		p = j->first_process;
-		previous_p = NULL;
+		next_p = NULL;
 		int i;
 
 		while(p)
 		{
-				previous_p = p;
-				p = p->next;
+				next_p = p->next;
 				
-				if(previous_p->argv) {
-				for(i = 0; previous_p->argv[i]; i++) {
-						yung_clog(DEBUG, 
-								 "Freeing previous_p->argv[%d]: %p", 
-								  i, (void*)previous_p->argv[i]);
-						free(previous_p->argv[i]);
-						previous_p->argv[i] = NULL;
+				if(p->argv) {
+						for(i = 0; p->argv[i]; i++) {
+								yung_clog(DEBUG, 
+										 "Freeing p->argv[%d]: %p", 
+											i, (void*)p->argv[i]);
+								free(p->argv[i]);
+								p->argv[i] = NULL;								
+						}
+
+						yung_clog(DEBUG, "Freeing p->argv: %p", (void*)p->argv);
+						free(p->argv);
+						p->argv = NULL;
 				}
 
-				yung_clog(DEBUG,
-						 "Freeing previous_p->argv: %p", 
-						 (void*)previous_p->argv);
-				free(previous_p->argv);
-				previous_p = NULL;
-				}
-
-				yung_clog(DEBUG,
-						 "Freeing previous_p: %p", 
-						 (void*)previous_p);
-				free(previous_p);
-				previous_p = NULL;
+				yung_clog(DEBUG, "Freeing p: %p", (void*)p);
+				free(p);
+				p = NULL;
 		}
-		yung_clog(DEBUG,
-				 "Freeing job: %p", 
-				 (void*)j);
+
+		yung_clog(DEBUG, "Freeing job: %p", (void*)j);
+
+		free(j->command);
+		j->command = NULL;
 		free(j);
 		j = NULL;
 }
@@ -347,7 +347,6 @@ do_job_notification()
 
 		update_status();
 
-
 		jlast = NULL;
 		for(j=first_job; j; j=jnext)
 		{
@@ -355,7 +354,7 @@ do_job_notification()
 
 				// If all process have completed, tell user and delete from list of active
 				if(job_is_completed(j)) {
-						format_job_info(j, "completed");
+						format_job_info(j, "job completed");
 						if(jlast)
 								jlast->next = jnext;
 						else
@@ -365,7 +364,7 @@ do_job_notification()
 
 				// Notify about stopped jobs, marking them so don't repeat
 				else if(job_is_stopped(j) && !j->notified) {
-						format_job_info(j, "stopped");
+						format_job_info(j, "job stopped");
 						j->notified = 1;
 						jlast = j;
 				}

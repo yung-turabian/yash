@@ -1,3 +1,10 @@
+/**
+ *	\file hrry.cpp
+ *
+ *	The entrypoint for the shell, houses main loop.
+ *
+ */
+
 // Components
 #include "../include/hrry_stdinc.h"
 #include "../include/builtin.h"
@@ -12,11 +19,10 @@
 		#include "../include/linux/hrry_x11.h"
 #endif
 
-#define MAX_TOKENS 6
+#define MAX_TOKENS 10
 #define MAX_STRING 80
 
-#define quit "❌"
-#define ls "👀"
+static bool shouldExit = false;
 
 /*
  *
@@ -59,29 +65,60 @@ job*
 call(int argc, char **argv)
 {
 		job* j = NULL;
-		process *p;
+		process *p = NULL;
 
 		j = (job*)malloc(sizeof(job));
-		p = (process*)malloc(sizeof(process));
-
-    if (j == NULL || p == NULL) {
-        perror("malloc");
+    if (j == NULL) {
+        yung_clog(ERROR,"New job failed to allocate.");
         return NULL;
     }
 
-		size_t arg_count = 0;
-		while(argv[arg_count]) arg_count++;
+		p = (process*)malloc(sizeof(process));
+    if (p == NULL) {
+        yung_clog(ERROR,"New process failed to allocate.");
+				free(j);
+        return NULL;
+    }
 
-		p->argv = (char**)malloc((arg_count + 1) * sizeof(char*));
-		for(size_t i = 0; i < arg_count; i++)
+		p->argv = (char**)malloc((argc + 1) * (MAX_STRING + 1));
+    if (p->argv == NULL) {
+        yung_clog(ERROR, "Failed to allocate memory for a new process's argv.");
+        free(p);
+        free(j);
+        return NULL;
+    }
+
+		for(int i = 0; i < argc; i++) {
 				p->argv[i] = strdup(argv[i]);
-		p->argv[arg_count] = NULL; // null terminate so execvp works
+				if (p->argv[i] == NULL) {
+            yung_clog(ERROR, "Failed to duplicate argv string.");
+            for (int j = 0; j < i; j++) {
+                free(p->argv[j]);
+            }
+            free(p->argv);
+            free(p);
+            free(j);
+            return NULL;
+        }
+		}
+		p->argv[argc] = NULL; // null terminate so execvp works
 		
 		p->next = NULL;
 		p->completed = false;
 		p->stopped = false;
 		
-		j->command = argv[0];
+		j->command = strdup(argv[0]);
+    if (j->command == NULL) {
+        yung_clog(ERROR, "Failed to duplicate command string.");
+        for (int i = 0; i < argc; i++) {
+            free(p->argv[i]);
+        }
+        free(p->argv);
+        free(p);
+        free(j);
+        return NULL;
+    }
+
 		j->pgid = 0;
 		j->first_process = p;
 		j->stdin = STDIN_FILENO;
@@ -92,53 +129,89 @@ call(int argc, char **argv)
 		// update linked list head
 		j->next = first_job;
 		first_job = j;
-		
+
 		launch_job(j, true);
 		return j;
 }
 
-void
+// for use of running a .hrry script
+/*void
 runFile(const char * path) 
 {
 		// Read bytes
 		// run()
-}
+}*/
 
-void execute_command(char* buf);
+typedef struct BufferedLine {
+		char** tokens;
+		u8 argc;
+
+		char* buf;
+		u8 buf_len;
+} BufferedLine;
+
+void execute_command(BufferedLine* currentLine);
 
 #include "../include/io.h"
 
-const char* YASH_ECHO = (const char*)"💬";
 
+void
+free_tokens(char** tokens, u8 count)
+{
+		u8 i;
+		for(i=0;i<count;i++)
+				free(tokens[i]);
 
+		free(tokens);
+}
+
+// Use of the hrry lang in interactive shell mode
 void
 runPrompt()
 {
+		BufferedLine* currentLine = (BufferedLine*)malloc(sizeof(BufferedLine));
+		if(currentLine == NULL) {
+				yung_clog(ERROR, "Failure to allocate for buffered line struct.");
+				return;
+		}
 
-		char* buf;
+		currentLine->buf = (char*)malloc(sizeof(char) * 4096);
+		if(currentLine == NULL) {
+				yung_clog(ERROR, "Failure to allocate line reader buffer.");
+				free(currentLine);
+				return;
+		}
+		currentLine->buf[0] = '\0';
+		//hist = (char**)malloc((sizeof(char) * 4096) * 10); write this to a file instead
+		currentLine->buf_len = 0;
+		currentLine->tokens = NULL;
+		currentLine->argc = 0;
 
-		u8 buf_len;
-
-		buf = (char*)malloc(sizeof(char) * 4096);
-		buf[0] = '\0';
-		//hist = (char**)malloc((sizeof(char) * 4096) * 10);
-		buf_len = 0;
-
-		// FIX THIS PLEAS!!!
+		// FIX THIS PLEASE!!!
 		for(;;)
 		{
-				buf_len = 0;
-				buf[0] = '\0';
+				if (shouldExit)
+						break;
+
+				currentLine->buf_len = 0;
+				currentLine->buf[0] = '\0';
 				fprintf(stdout, "🐚 %c7", ESC);
-				handle_input(buf, &buf_len);
+				handle_input(currentLine->buf, &currentLine->buf_len);
 
-				if(buf[0] != '\0') {
-
-						execute_command(buf);
+				if(currentLine->buf[0] != '\0') {
+						execute_command(currentLine);
 				} else {
 						fprintf(stdout, "\n"); //no input
 				}
 		}
+
+		// on exit
+		free(currentLine->buf);
+
+		if(currentLine->tokens != NULL)
+				free_tokens(currentLine->tokens, currentLine->argc);
+		
+		free(currentLine);
 }
 
 void
@@ -149,96 +222,54 @@ run(const char * source)
 }
 
 
-typedef struct BufferedLine {
-		char** tokens;
-		int argc;
-} BufferedLine;
-
-BufferedLine* 
-tok(char* str, const char* del)
-{
-		char* token;
-		token = strtok(str, del);
-		
-		BufferedLine* currentLine;
-		currentLine = (BufferedLine*)malloc(sizeof(BufferedLine));
-		currentLine->tokens = (char**)malloc(sizeof(char*) * MAX_TOKENS); //max
-		currentLine->argc = 1;
-
-		for(int i=0; i < MAX_TOKENS; i++) {
-				currentLine->tokens[i] = (char*)malloc(MAX_STRING + 1);
-				if(currentLine->tokens[i] == NULL) return NULL;
-					
-				strcpy(currentLine->tokens[i], token);
-				
-				token = strtok(NULL, del);
-
-				if(token == NULL) break;
-				currentLine->argc++;
-		}
-
-		return currentLine;
-}
-
-bool
-lookup(const char* arg, const char* path)
-{
-		DIR* dirp;
-		struct dirent *dp;
-
-		if((dirp = opendir(path)) == NULL) {
-				fprintf(stderr, "[🐚yash] couldn't open '%s'", path);
-				exit(EXIT_FAILURE);
-		}
-
-		do {
-				errno = 0;
-				if((dp = readdir(dirp)) != NULL) {
-						if(strcmp(dp->d_name, arg) != 0) continue;
-
-						closedir(dirp);
-						return true;
-				}
-
-		} while(dp != NULL);
-
-		if(errno != 0) {
-				perror("error reading directory");
-		}
-		else {
-				fprintf(stdout, "[🐚yash] Unknown command: %s\n", arg);
-		}
-		
-		closedir(dirp);
-		return false;
-}
-
-
-#include <term.h>
-
-
-
 void
-getCursorPosition(int* rows, int* cols)
+tok(char* str, const char* del, char*** tokens, u8* count)
 {
-		char buf[32];
-		u8 i = 0;
+		yung_clog(INFO, "Beginning a tokenizer task.");
+		char* token;
+		int i;
 
-		write(STDOUT_FILENO, "\x1b[6n", 4);
+		*tokens = NULL;
+		*count = 0;
 
+		token = strtok(str, del);
+		if(token == NULL) {
+				yung_clog(INFO, 
+						"Closed tokenizer task as there were no tokens in the buffer.");
+				return;
+		}
 
-    // Read the response
-    while (i < sizeof(buf) - 1) {
-        if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
-        if (buf[i] == 'R') break;
-        i++;
-    }
-    buf[i] = '\0';
+		*tokens = (char**)malloc(MAX_TOKENS * (MAX_STRING + 1));
+		if(tokens == NULL) {
+				yung_clog(ERROR, "Tokenizer failed to allocate for provided token buffer.");
+				return;
+		} 
 
-    // Parse the response
-    if (buf[0] == '\x1b' && buf[1] == '[') {
-        sscanf(&buf[2], "%d;%d", rows, cols);
-    }
+		for(i=0; i < MAX_TOKENS && token != NULL; i++) {
+				(*tokens)[i] = (char*)malloc(MAX_STRING + 1);
+				if((*tokens)[i] == NULL) {
+						yung_clog(ERROR, "Tokenizer failed to allocate for a token.");
+						
+						free_tokens(*tokens, *count);
+						yung_clog(INFO, 
+										"Freed token buffers and all tokens (including shitty ones).");
+						return;
+				}
+					
+				strcpy((*tokens)[i], token);
+				token = strtok(NULL, del);
+				(*count)++;
+		}
+		
+		*tokens = (char**)realloc(*tokens, (*count) * (MAX_STRING + 1));
+		if(*tokens == NULL) {
+				yung_clog(ERROR,
+						"Tokenizer failed to reallocate token buffer.");
+				return;
+		}
+
+		yung_clog(INFO, 
+						"Successfully finished tokenizer task and found %d tokens.", *count);
 }
 
 #include "../include/linker.h"
@@ -246,51 +277,54 @@ getCursorPosition(int* rows, int* cols)
 #define MAX_NUMBER_ARGS 4096
 #define MAX_ARG_SIZE 100
 
+
 void
-execute_command(char* buf)
+execute_command(BufferedLine* currentLine)
 {
-		BufferedLine* currentLine;
-		if(buf[0] != '\0') {
-				currentLine = tok(buf, " ");
+		if(currentLine->buf_len != 0) {
+				tok(currentLine->buf, " ", &currentLine->tokens, &currentLine->argc);
 
-				char *shell_argv[MAX_NUMBER_ARGS]; 
-				// Needs to be null-terminated
+				if(currentLine->tokens == NULL || currentLine->argc == 0)
+						return;
 
-				int argc;		
+				fflush(stdout);
+				char *argv[MAX_NUMBER_ARGS]; 
+				int argc = 0;		
 
 				link(currentLine->tokens, currentLine->argc);
 
-				shell_argv[0] = currentLine->tokens[0];
-
-				for(argc=1;argc < currentLine->argc;argc++)
-						shell_argv[argc] = currentLine->tokens[argc];
-
-
-				shell_argv[argc] = NULL;
+				for(argc=0;argc < currentLine->argc;argc++) 
+						argv[argc] = (char*)currentLine->tokens[argc];
 
 				fprintf(stdout, "\n");
 
 				// This is really bad!
-				if(shell_argv[0] != NULL) {
-						int res = execute(argc, shell_argv);
+				if(argv[0] != NULL) {
+						int res = execute(argc, argv);
 						if(res == -1) {
 
-								call(argc, shell_argv);
+								// default alias, move this 
+								if(strcmp(argv[0], "ls") == 0) {
+										argv[argc++] = (char*)"--color=auto";
+										argv[argc++] = (char*)"-F";
+								}
+
+								call(argc, argv);
 
 								//strcat(hist, shell_argv[0]);
 						} 
-						else if(res == EXIT_CALLED_FROM_CMD) {	exit(EXIT_SUCCESS); }
-						else {
-								
-						}
+						else if(res == EXIT_CALLED_FROM_CMD)
+								shouldExit = true;
 				} 
 
-				free(currentLine->tokens);
-				free(currentLine);
 		}
+
+		free_tokens(currentLine->tokens, currentLine->argc);
+		currentLine->tokens = NULL;
 
 }
 
+/*
 #include <pthread.h>
 
 void* job_notification_thread(void *arg) {
@@ -299,7 +333,10 @@ void* job_notification_thread(void *arg) {
         sleep(1);  // Sleep for a second to avoid busy-waiting
     }
     return NULL;
-}
+}*/
+
+// Whether to use emoji scripting or regular syntactic styling
+bool runStd = false;
 
 int 
 main(int argc, char* argv[])
@@ -311,6 +348,8 @@ main(int argc, char* argv[])
 				} else if(strncmp(argv[1], "--help", 6) == 0) {
 						system("less +g -R man/hrry_help.txt");
 						return EXIT_SUCCESS;
+				} else if(strncmp(argv[1], "--std", 6) == 0) {
+						runStd = true;
 				}
 		}
 
@@ -319,7 +358,7 @@ main(int argc, char* argv[])
         return 1;
     }
 
-		yungLog_create_fp("hrry");
+		yungLog_fopen("hrry");
 
 		init_shell();
 		/*
@@ -347,7 +386,9 @@ main(int argc, char* argv[])
 
 		// Cleanup
 		//closedir(current_dir);
-
+		reset_terminal();
+		do_job_notification();
+		yungLog_fclose();
 		
 		
 		return(EXIT_SUCCESS);

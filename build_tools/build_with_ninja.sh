@@ -2,31 +2,45 @@
 
 set -e
 
-BUILD_DIR=$1
-if [ -z "$BUILD_DIR" ]; then
-    echo "Usage: $0 <path-to-build-directory>"
-    exit 1
+COMPILE_TYPE=${1:-'debug'} # defaults
+CLEAN=${2:false}
+
+#if [ -z "$BUILD_DIR" ]; then
+#    echo "Usage: $0 <path-to-build-directory>"
+# #   exit 1
+#fi
+
+if ! [ -d ./build ] ; then
+		mkdir build
+fi
+
+if [ -f "./build/CMakeCache.txt" ] && [ $CLEAN ] ; then
+		echo "Cleaning..."
+		rm -rf ./build/*
 fi
 
 CURR_DIR=$(pwd)
 
-# Create build directory if it doesn't exist
-if [ ! -d "$BUILD_DIR" ]; then
-    mkdir "$BUILD_DIR"
+if [ -f $CURR_DIR/CMakePresets.json ]; then
+    echo "CMakePresets.json found in '$CURR_DIR'."
+
+		PRESETS_DIR=$CURR_DIR
+
+		clear
+
+		echo "Starting build..."
+		start_time=$(date +%s%3N)
+		cmake -S . -B ./build/ -G Ninja --preset "${COMPILE_TYPE}" &&
+		cmake --build build/
+		end_time=$(date +%s%3N)
+
+		elapsed_seconds=$(((end_time - start_time) / 1000))
+		elapsed_ms=$(((end_time - start_time) % 1000))
+		echo "Build completed: $elapsed_seconds.$elapsed_ms ms"
+
+		mv ./build/hrry $CURR_DIR
+else 
+		echo "CMakePresets.json not found in '$CURR_DIR'."
+		echo "Returning..."
+		exit 1
 fi
-
-
-echo "Starting build..."
-cd "$BUILD_DIR"
-start_time=$(date +%s)
-cmake -G Ninja ..
-time ninja
-end_time=$(date +%s)
-cd "$CURR_DIR"
-
-elapsed=$((end_time - start_time))
-echo "Build completed in $elapsed seconds."
-
-mv $BUILD_DIR/hrry $CURR_DIR
-
-echo "Build completed successfully."
