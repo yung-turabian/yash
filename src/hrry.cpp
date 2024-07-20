@@ -354,13 +354,12 @@ main(int argc, char* argv[])
 		}
 
 
-
 		if (setenv("TERM", "xterm-256color", 1) != 0) {
-        return 1;
+        fprintf(stderr, "Wasn't able to set TERM variable\n");
     }
 
-
 		yungLog_fopen("hrry");
+
 		init_shell();
 		/*
     pthread_t notif_thread;
@@ -379,9 +378,6 @@ main(int argc, char* argv[])
 
 
 		runPrompt();
-
-
-
 
 		
 
