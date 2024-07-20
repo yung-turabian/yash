@@ -2,12 +2,13 @@
 
 hrry is an attempt to bring the world of Emojis to the shell.
 
+```
      -----------------------------/ ^^^^^^^ \
    /                             |  | * * |  |
   / |   )                   |  ||\__/  @  \__/
 \/   \ / /----------\______/ \ //     '-'
       ||=|=                   ||=|=
-
+```
 ## Philosophy
 
 Nihilism.
