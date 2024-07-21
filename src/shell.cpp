@@ -24,9 +24,9 @@ init_shell()
 						kill(- Shell.pgid, SIGTTIN);
 				
 				/* Ignore interactive and job-control signals.  */
-				signal (SIGINT, SIG_IGN); // ^C
+				signal (SIGINT, SIG_IGN);
+				signal (SIGTSTP, SIG_IGN);
 				signal (SIGQUIT, SIG_IGN);
-				signal (SIGTSTP, SIG_IGN); // ^Z
 				signal (SIGTTIN, SIG_IGN);
 				signal (SIGTTOU, SIG_IGN);
 
@@ -36,10 +36,13 @@ init_shell()
 				sigemptyset(&sa.sa_mask);
 				sa.sa_flags = SA_RESTART | SA_SIGINFO;
 
-				if(sigaction(SIGCHLD, &sa, (struct sigaction *)NULL) == -1) {
-						yung_clog(ERROR, 
+				sig_atomic_t sigsarr[2] = {SIGCHLD, SIGCONT};
+				
+				u8 i;
+				for(i=0;i<2;i++)
+						if(sigaction(sigsarr[i], &sa, (struct sigaction *)NULL) == -1)
+								yung_clog(ERROR, 
 										"Sigaction failure: couldn't init SIGCHLD link to signal_handler");
-				}
 
 
 				// put shell in own process group
@@ -59,10 +62,14 @@ init_shell()
 
 
 				//new_t.c_lflag &= ~(ISIG);
-				Shell.tmodes.c_lflag &= ~(ICANON | ECHO);
-				Shell.tmodes.c_cc[VTIME] = 0;
-				Shell.tmodes.c_cc[VMIN] = 1;
-				Shell.tmodes.c_cc[VERASE] = 1;
+				Shell.tmodes.c_lflag &= ~(ICANON | ECHO | IEXTEN);
+				Shell.tmodes.c_cc[VTIME] = 0; // 
+				Shell.tmodes.c_cc[VMIN] = 1; // min # of chars
+				Shell.tmodes.c_cc[VINTR] = 1;  // ETX
+				Shell.tmodes.c_cc[VERASE] = 1; // DEL or BS
+				Shell.tmodes.c_cc[NOFLSH] = 0;
+				Shell.tmodes.c_cc[VLNEXT] = 1; // Ctrl+V
+				Shell.tmodes.c_cc[VEOF] = 1; // EOF
 				//new_t.c_iflag &= (IUTF8);
 				//new_t.c_cflag;
 				//new_t.c_oflag &= (IUTF8);
@@ -77,7 +84,7 @@ init_shell()
 		}
 }
 
-/*	EXITED = 1, KILLED, DUMPED, TRAPPED, STOPPED, CONTINUED
+/*	Return sigchld codes:= EXITED = 1, KILLED, DUMPED, TRAPPED, STOPPED, CONTINUED
  *	
  *
  */

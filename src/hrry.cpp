@@ -11,14 +11,6 @@
 #include "../include/shell.h"
 #include "../include/jobs.h"
 
-#ifdef _WIN32
-		
-#elif __APPLE__
-		
-#elif __linux__
-		#include "../include/linux/hrry_x11.h"
-#endif
-
 #define MAX_TOKENS 10
 #define MAX_STRING 80
 

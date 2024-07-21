@@ -6,21 +6,30 @@ static int hist_len;
 static int curr_hist_sel = 0;
 static bool editing_line = false;
 
+#define SOH 1 // CTRL+A
 #define ETX 3 // CTRL+C
+#define EOT 4
 #define HOR_TAB 9
 #define LINE_FEED 10 // \n
 #define FORM_FEED 12 // FF, CTRL+L
 #define DEL 127
 #define BS 8
 #define SYN 22 // CTRL+V
+#define SUB 26 // CTRL+Z
 
 void
 handle_input(char* buf, u8 *buf_len)
 {
 		bool breakout = false;
 
-		//unsigned char* emoji;
+		unsigned char* emoji;
 		// pretty shit, rework
+		//
+		// CTRL+A beginning of line
+		// +E end
+		// +K yank after cursor
+		// +U before
+		// +
 
 		char c;
 		do {
@@ -33,7 +42,13 @@ handle_input(char* buf, u8 *buf_len)
 				c = getchar();
 
 				switch(c) {
+						case SOH:
+								fprintf(stdout, "heyy\n");
+								fflush(stdout);
+								break;	
 						case ETX:
+								cfbprintf("^C", ANSI_YELLOW, ANSI_RED);
+								buf[0] = '\0';
 								breakout = true;
 								break;
 						case HOR_TAB:
@@ -47,6 +62,8 @@ handle_input(char* buf, u8 *buf_len)
 										curr_hist_sel++;
 								}
 								break;
+						case EOT:
+								//shouldExit = true;
 						case EOF: // added for testing and feeding from another file
 								breakout = true;
 								break;
@@ -60,12 +77,11 @@ handle_input(char* buf, u8 *buf_len)
 								if(*buf_len > 0) buf[--(*buf_len)] = '\0';
 								break;
 						case SYN: // pretty sloppy
-								//emoji = getX11Clipboard();
-								//emoji = getClipboardContents();
-								//strcat(buf, (const char*) emoji);
-								//fprintf(stdout, "%s", emoji);
-								//fflush(stdout);
-								//*buf_len += strlen((const char*)emoji);
+								emoji = getX11Clipboard();
+								strcat(buf, (const char*) emoji);
+								fprintf(stdout, "%s", emoji);
+								fflush(stdout);
+								*buf_len += 2;
 								break;
 						/*case 'e':
 								//debug, kinda janky
@@ -75,6 +91,9 @@ handle_input(char* buf, u8 *buf_len)
 								buf[0] = '\0';
 								buf_len++;
 								break;*/
+						case SUB:
+								buf[0] = '\0';
+								break;
 						case ESC:
 								getchar(); //consume '['
 								switch(getchar()) { 
@@ -93,6 +112,16 @@ handle_input(char* buf, u8 *buf_len)
 												*buf_len = strlen(hist[curr_hist_sel]);
 												editing_line = false;
 										}
+										break;
+
+										case 'C': //right
+										
+
+										break;
+
+										case 'D':
+
+
 										break;
 								}
 								break;

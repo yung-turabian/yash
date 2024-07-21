@@ -24,6 +24,7 @@
 #include <ncurses.h>
 
 #include "yungLog.h"
+#include "color.h"
 
 // Exit codes, for child processes and program
 #ifndef CHILD_EXIT_CODE
