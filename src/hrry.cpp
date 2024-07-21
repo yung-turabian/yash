@@ -42,6 +42,24 @@ static bool shouldExit = false;
  *
  */
 
+void
+readConfig()
+{
+		yung_clog(INFO, "Looking for .config/hrry dir");
+		DIR *dir = opendir("~/.config/hrry");
+		if(dir) {
+				
+
+				closedir(dir);
+		} else if (ENOENT == errno) {
+				yung_clog(INFO, "Created .config/hrry");
+				mkdir("~/.config/hrry", 
+								S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		} else {
+				perror("opendir");
+		}
+		//FILE *file = fopen("~/.config/hrry
+}
 
 int
 execute(int argc, char **argv)
@@ -377,6 +395,8 @@ main(int argc, char* argv[])
 
 
 		yungLog_fopen("hrry");
+
+		//readConfig();
 
 		init_shell();
 		/*
