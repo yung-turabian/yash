@@ -108,7 +108,7 @@ if [ -f $CURR_DIR/CMakePresets.json ]; then
 
 		echo "Build completed: $duration_ms ms"
 
-		mv ./build/hrry "${CURR_DIR}/bin"
+		mv ./build/hrry "${CURR_DIR}"
 else 
 		echo "CMakePresets.json not found in '$CURR_DIR'."
 		echo "Returning..."
