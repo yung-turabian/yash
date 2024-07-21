@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 usage () {
   echo "Usage:"
   echo "   build_with_ninja [options]"
@@ -106,7 +108,7 @@ if [ -f $CURR_DIR/CMakePresets.json ]; then
 
 		echo "Build completed: $duration_ms ms"
 
-		mv ./build/hrry $CURR_DIR
+		mv ./build/hrry "${CURR_DIR}/bin"
 else 
 		echo "CMakePresets.json not found in '$CURR_DIR'."
 		echo "Returning..."
