@@ -1,0 +1,12 @@
+post_install() {
+		grep -Fqx /bin/hrry /etc/shells || echo /bin/hrry >> /etc/shells
+		grep -Fqx /usr/bin/hrry /etc/shells || echo /usr/bin/hrry >> /etc/shells
+}
+
+post_upgrade() {
+		post_install
+}
+
+post_remove() {
+		sed -i -r '/^(\/usr)?\/bin\/hrry$/d' etc/shells
+}

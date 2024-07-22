@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=0.1.0
+Type=Application
+Terminal=true
+Exec=hrry
+Name=hrry
+Comment=The Emoji shell
+#Icon=
+Categories=System;

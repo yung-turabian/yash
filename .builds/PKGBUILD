@@ -1,6 +1,6 @@
 # Maintainer: Henry Wandover <henrywandover@gmail.com>
 pkgname=hrry-shell
-pkgver=r72.08dab27
+pkgver=r76.f4f7f5a
 pkgrel=1
 pkgdesc="An emoji interactive shell and scripting language."
 arch=("x86_64")

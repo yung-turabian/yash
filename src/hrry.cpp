@@ -30,7 +30,7 @@ static bool shouldExit = false;
  *	Figure out piping
  *	https://man7.org/linux/man-pages/man2/pipe.2.html
  *
-*		Clean up kids and job management
+ *	Change log directory to something  that makes sense.
  *
  */
 
@@ -323,10 +323,18 @@ execute_command(BufferedLine* currentLine)
 						if(res == -1) {
 
 								// default alias, move this 
+								if(strcmp(argv[0], "la") == 0) {
+										argv[0] = (char*)"ls";
+										argv[argc++] = (char*)"-a";
+								} else if(strcmp(argv[0], "ll") == 0) {
+										argv[0] = (char*)"ls";
+										argv[argc++] = (char*)"-lh";
+								}
 								if(strcmp(argv[0], "ls") == 0) {
 										argv[argc++] = (char*)"--color=auto";
 										argv[argc++] = (char*)"-F";
 								}
+
 
 								call(argc, argv);
 
