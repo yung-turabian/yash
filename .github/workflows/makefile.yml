@@ -25,11 +25,11 @@ jobs:
 
     - name: Configure with MesonBuild
       run: 
-        - meson setup build
-        - meson compile -C build
-        - cd build
-        - sudo meson install
-        - echo "exit" | hrry
+        meson setup build
+        meson compile -C build
+        cd build
+        sudo meson install
+        echo "exit" | hrry
 
   Build-On-Mac:
     name: Build hrry on Mac
