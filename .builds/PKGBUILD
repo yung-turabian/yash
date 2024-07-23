@@ -44,6 +44,7 @@ package() {
 		mkdir -p "${pkgdir}/usr/share/doc"
 		mkdir -p "${pkgdir}/usr/share/hrry"
 		mkdir -p "${pkgdir}/usr/share/hrry/completions"
+		mkdir -p "${pkgdir}/usr/share/hrry/logs"
 		mkdir -p "${pkgdir}/usr/share/info"
 		mkdir -p "${pkgdir}/usr/share/licenses"
 		mkdir -p "${pkgdir}/usr/share/licenses/hrry"
@@ -55,7 +56,9 @@ package() {
 		#make DESTDIR="$pkgdir/" install
 
 		cp "${srcdir}/hrry-shell/hrry" "${pkgdir}/usr/bin/hrry"
+		cp -vr "${srcdir}/hrry-shell/share/man" "${pkgdir}/usr/share/man"
 		
+
 		chmod +x "${pkgdir}/usr/bin/hrry"
 
 }

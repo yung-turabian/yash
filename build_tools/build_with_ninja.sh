@@ -32,14 +32,12 @@ while [ "$#" -gt 0 ] ; do
 
 		-c | --clear)
 				shift
-				# clear screen w/o reseting TERM
-				echo -e "\033[2J\033[H" &&
-				printf "\033[2J\033[H"
+				clear	
 				shift ;;
 
 		-t | --type)
 				shift
-				if [ "$#" -eq 0 ]; then echo "ERROR: Missig compile type"; usage ; fi
+				if [ "$#" -eq 0 ]; then echo "ERROR: Missing compile type"; usage ; fi
 				COMPILE_TYPE=${1}
 				shift ;;
 
@@ -108,7 +106,6 @@ if [ -f $CURR_DIR/CMakePresets.json ]; then
 
 		echo "Build completed: $duration_ms ms"
 
-		mv ./build/hrry "${CURR_DIR}"
 else 
 		echo "CMakePresets.json not found in '$CURR_DIR'."
 		echo "Returning..."

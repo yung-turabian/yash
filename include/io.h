@@ -7,7 +7,7 @@
 #elif __APPLE__
 		
 #elif __linux__
-		#include "../include/linux/hrry_x11.h"
+		#include "../include/hrry_x11.h"
 #endif
 
 void handle_input(char* buf, u8 *buf_len);

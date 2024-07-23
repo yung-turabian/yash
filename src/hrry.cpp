@@ -30,27 +30,67 @@ static bool shouldExit = false;
  *	Figure out piping
  *	https://man7.org/linux/man-pages/man2/pipe.2.html
  *
- *	Change log directory to something  that makes sense.
+ *	Change log directory to something  that makes sense, the /share/hrry/logs.
+ *		- Read a config file and change config line when install
  *
  */
 
 void
-readConfig()
+readParentConfig()
 {
-		yung_clog(INFO, "Looking for .config/hrry dir");
-		DIR *dir = opendir("~/.config/hrry");
+		DIR *dir;
+		struct dirent *entry;
+
+		char cwd[PATH_MAX];
+		FILE* conf;
+		char share_loc[PATH_MAX];
+
+		if(getcwd(cwd, sizeof(cwd)) != NULL) {
+
+				if(strcmp(cwd, "/usr/bin") == 0) {
+						strcpy(share_loc, "/usr/share/hrry/");
+						yungLog_fopen("hrry", "/usr/share/hrry/logs");
+				} else { // in a development dir
+						strcpy(share_loc, "share/hrry/");
+						yungLog_fopen("hrry", "");
+				}
+				// check for unexpected beahvior?
+		}	else {
+				perror("getcwd() error");
+				exit(EXIT_FAILURE);
+		}
+
+		yung_clog(INFO, "Looking for parent config.hrry");
+		dir = opendir(share_loc);
 		if(dir) {
 				
+				while((entry = readdir(dir)) != NULL && 
+								(strcmp(entry->d_name, "config.hrry") != 0));
 
-				closedir(dir);
+				
+				if(entry == NULL) {
+						yung_clog(ERROR, "Couldn't find config");
+						return;
+				}
+				
+				strcat(share_loc, entry->d_name);
+				conf = fopen(share_loc, "r");
+				if(conf == NULL) {
+						yung_clog(ERROR, "Error opening config");
+						return;
+				}
+
 		} else if (ENOENT == errno) {
-				yung_clog(INFO, "Created .config/hrry");
-				mkdir("~/.config/hrry", 
-								S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+				yung_clog(INFO, "Couldn't find");
+				//mkdir("/usr/share/hrry", 
+				//				S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		} else {
 				perror("opendir");
 		}
-		//FILE *file = fopen("~/.config/hrry
+
+
+		fclose(conf);
+		closedir(dir);
 }
 
 int
@@ -365,6 +405,7 @@ void* job_notification_thread(void *arg) {
 // Whether to use emoji scripting or regular syntactic styling
 bool runStd = false;
 
+
 int 
 main(int argc, char* argv[])
 {
@@ -377,7 +418,7 @@ main(int argc, char* argv[])
 						return EXIT_SUCCESS;
 				} else if(strncmp(argv[1], "--std", 6) == 0) {
 						runStd = true;
-				}
+				} 
 		}
 		
 		// Complete this
@@ -393,10 +434,11 @@ main(int argc, char* argv[])
 				}
 		}
 
+		// Fix this
+		//readParentConfig();
 
-		yungLog_fopen("hrry");
-
-		//readConfig();
+		// Configure log placement correctly
+		yungLog_fopen("hrry", "");
 
 		init_shell();
 		/*

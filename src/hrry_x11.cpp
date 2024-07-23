@@ -1,6 +1,6 @@
 #ifdef __linux__
 // pretty dumb ^
-#include "../include/linux/hrry_x11.h"
+#include "../include/hrry_x11.h"
 
 void
 show_utf8_prop(Display* dpy, Window w, Atom p)

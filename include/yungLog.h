@@ -110,7 +110,7 @@ yungLog(AnsiiColor_t type, const char *fmt, ...)
 }
 
 inline void
-yungLog_fopen(const char* AppName)
+yungLog_fopen(const char* AppName, const char* Location)
 {
     time_t t;
     char datestr[51];
@@ -119,10 +119,10 @@ yungLog_fopen(const char* AppName)
 		tzset();
     strftime(datestr, sizeof(datestr) - 1, "%Y-%m-%d.log", localtime(&t));
 
-		size_t len = strlen(AppName) + strlen(datestr) + 2;
+		size_t len = strlen(Location) + strlen(AppName) + strlen(datestr) + 2;
 #ifdef __cplusplus
 		std::vector<char> buf(len);
-		snprintf(buf.data(), len, "%s_%s", AppName, datestr);
+		snprintf(buf.data(), len, "%s%s_%s", Location, AppName, datestr);
 
 		LogFptr = fopen(buf.data(), "w");
 		if(LogFptr == NULL) {
@@ -131,7 +131,7 @@ yungLog_fopen(const char* AppName)
 		}
 #else
 		char buf[len];
-		snprintf(buf, len, "%s_%s", AppName, datestr);
+		snprintf(buf, len, "%s%s_%s", Location, AppName, datestr);
 
 		LogFptr = fopen(buf, "w");
 		if(LogFptr == NULL) {

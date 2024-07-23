@@ -17,12 +17,42 @@ static bool editing_line = false;
 #define SYN 22 // CTRL+V
 #define SUB 26 // CTRL+Z
 
+
+typedef struct Emoji {
+
+
+} Emoji;
+
+int
+is_emoji(wchar_t wc)
+{
+   // Check for common emoji ranges in Unicode
+    return (
+        (wc >= 0x1F600 && wc <= 0x1F64F) || // Emoticons
+        (wc >= 0x1F300 && wc <= 0x1F5FF) || // Miscellaneous Symbols and Pictographs
+        (wc >= 0x1F680 && wc <= 0x1F6FF) || // Transport and Map Symbols
+        (wc >= 0x1F700 && wc <= 0x1F77F) || // Alchemical Symbols
+        (wc >= 0x1F780 && wc <= 0x1F7FF) || // Geometric Shapes Extended
+        (wc >= 0x1F800 && wc <= 0x1F8FF) || // Supplemental Arrows-C
+        (wc >= 0x1F900 && wc <= 0x1F9FF) || // Supplemental Symbols and Pictographs
+        (wc >= 0x1FA00 && wc <= 0x1FA6F) || // Chess Symbols
+        (wc >= 0x1FA70 && wc <= 0x1FAFF)    // Symbols and Pictographs Extended-A
+    );
+}
+
+#include <wchar.h>
+#include <locale.h>
+
 void
 handle_input(char* buf, u8 *buf_len)
 {
 		bool breakout = false;
-
-		unsigned char* emoji;
+		
+		setlocale(LC_ALL, "en_US.utf8"); //include in main
+		unsigned char* pasted;
+		wchar_t wc;
+		int ret;
+		char emoji_buf[16]; // change
 		// pretty shit, rework
 		//
 		// CTRL+A beginning of line
@@ -66,6 +96,7 @@ handle_input(char* buf, u8 *buf_len)
 								//shouldExit = true;
 						case EOF: // added for testing and feeding from another file
 								breakout = true;
+								exit(0);
 								break;
 						case FORM_FEED:
 								fprintf(stdout, "%c[2J%c[1;1H🐚 %c7", 
@@ -77,11 +108,25 @@ handle_input(char* buf, u8 *buf_len)
 								if(*buf_len > 0) buf[--(*buf_len)] = '\0';
 								break;
 						case SYN: // pretty sloppy
-								emoji = getX11Clipboard();
-								strcat(buf, (const char*) emoji);
-								fprintf(stdout, "%s", emoji);
-								fflush(stdout);
-								*buf_len += 2;
+								pasted = getX11Clipboard();
+								ret = mbtowc(&wc, (char*)pasted, MB_CUR_MAX);
+								//wc = (wchar_t*)pasted;
+								/* DEBUG if (ret > 0) {
+										printf("The wide character: %lc\n", wc);
+										if (is_emoji(wc)) {
+												printf("The character is an emoji.\n");
+										} else {
+												printf("The character is not an emoji.\n");
+										}
+								} else {
+										printf("Conversion failed.\n");
+								}*/
+
+								sprintf(emoji_buf, "%lc", wc);
+								
+								strcat(buf, emoji_buf); 
+								*buf_len += strlen(emoji_buf); // use a linked instead and BS pops current,
+																							 // account four cursor movement
 								break;
 						/*case 'e':
 								//debug, kinda janky

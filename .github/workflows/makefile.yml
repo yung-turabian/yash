@@ -21,10 +21,15 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y clang libx11-dev ninja-build
+      run: sudo apt-get update && sudo apt-get install -y clang libx11-dev ninja-build meson
 
-    - name: Configure with CMake (using build_tools)
-      run: ./build_tools/build_with_ninja.sh
+    - name: Configure with MesonBuild
+      run: 
+        - meson setup build
+        - meson compile -C build
+        - cd build
+        - sudo meson install
+        - echo "exit" | hrry
 
   Build-On-Mac:
     name: Build hrry on Mac
@@ -35,7 +40,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: brew update && brew install libx11 ninja coreutils
+      run: brew update && brew install libx11 ninja coreutils meson
 
     - name: Configure with CMake (using build_tools)
       run: ./build_tools/build_with_ninja.sh
